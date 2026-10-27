@@ -1,0 +1,896 @@
+{
+  "noether": "0.1.0",
+  "run_id": "20261027-024130-11c41d",
+  "repo": "local/hopper",
+  "pr": {
+    "url": "",
+    "title": "Refactor physics step into integrate(); tune jump feel"
+  },
+  "base": {
+    "ref": "base",
+    "sha": "489ee1ef7e4d"
+  },
+  "head": {
+    "ref": "head",
+    "sha": "8373cf89d84b"
+  },
+  "verdict": "BROKEN",
+  "reason": "The pinned behaviour step-applies-air-control-reduced-acceleration held on base, fails on head, and the pull request does not announce it.",
+  "intent": {
+    "summary": "The pull request refactors the physics step function into a separate integrate() function and adjusts jump-related constants to improve readability and feel.",
+    "intended_changes": [
+      "Increased coyote frames from 4 to 6 to reduce missed jumps near platform edges.",
+      "Raised terminal fall speed from 18 to 22 to make long falls feel snappier and landings more responsive."
+    ],
+    "dependency_bumps": []
+  },
+  "invariants": [
+    {
+      "name": "player-box-dimensions-consistent",
+      "claim": "playerBox returns a box whose dimensions match PLAYER_HALF and PLAYER_HEIGHT constants",
+      "target_file": "src/physics.js",
+      "target_symbol": "playerBox",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { playerBox, PLAYER_HALF, PLAYER_HEIGHT } from '../../src/physics.js';test('playerBox dimensions', async t => {\n  const pos = [5, 10, 3];\n  const box = playerBox(pos);\n  assert.strictEqual(box.min[0], pos[0] - PLAYER_HALF);\n  assert.strictEqual(box.max[0], pos[0] + PLAYER_HALF);\n  assert.strictEqual(box.min[1], pos[1]);\n  assert.strictEqual(box.max[1], pos[1] + PLAYER_HEIGHT);\n  assert.strictEqual(box.min[2], pos[2] - PLAYER_HALF);\n  assert.strictEqual(box.max[2], pos[2] + PLAYER_HALF);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-applies-air-control-reduced-acceleration",
+      "claim": "step applies reduced horizontal acceleration when in the air",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step, RUN_ACCEL, AIR_CONTROL, DT } from '../../src/physics.js';test('air control reduces acceleration', async t => {\n  const level = { platforms: [], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.grounded = false;\n  state.vel = [0, 0, 0];\n  const input = { x: 1, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  const expectedAccel = RUN_ACCEL * AIR_CONTROL * DT;\n  assert.strictEqual(next.vel[0], expectedAccel);\n  assert.strictEqual(next.vel[2], 0);\n});",
+      "base": "pass",
+      "head": "fail",
+      "kind": "silent",
+      "output": "[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\n0.0985 !== 0.1\n] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  0.0985 !== 0.1\n  \n      at TestContext.<anonymous> (file:///w/repo/.noether/pinned/step-applies-air-control-reduced-acceleration.test.mjs:9:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 0.0985,\n    expected: 0.1,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n}"
+    },
+    {
+      "name": "step-enforces-terminal-speed-limit",
+      "claim": "step clamps vertical velocity to TERMINAL_SPEED when falling",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step, GRAVITY, DT, TERMINAL_SPEED } from '../../src/physics.js';test('terminal speed limits fall velocity', async t => {\n  const level = { platforms: [], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.vel = [0, -TERMINAL_SPEED - 5, 0];\n  state.grounded = false;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.vel[1], -TERMINAL_SPEED);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-applies-jump-velocity-when-conditions-met",
+      "claim": "step sets vertical velocity to JUMP_SPEED when jump is buffered and coyote time allows",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step, JUMP_SPEED, JUMP_BUFFER_FRAMES, COYOTE_FRAMES } from '../../src/physics.js';test('jump applies correct vertical velocity', async t => {\n  const level = { platforms: [{ id: 'ground', min: [0,-1,0], max: [10,0,10] }], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.pos = [5, 0, 5];\n  state.vel = [0, 0, 0];\n  state.grounded = true;\n  state.buffer = JUMP_BUFFER_FRAMES;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.vel[1], JUMP_SPEED);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-resets-jump-buffer-after-jump",
+      "claim": "step resets jump buffer to zero after a jump is executed",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step, JUMP_BUFFER_FRAMES } from '../../src/physics.js';test('jump buffer cleared after jump', async t => {\n  const level = { platforms: [{ id: 'ground', min: [0,-1,0], max: [10,0,10] }], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.pos = [5, 0, 5];\n  state.vel = [0, 0, 0];\n  state.grounded = true;\n  state.buffer = JUMP_BUFFER_FRAMES;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.buffer, 0);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-increments-air-frames-when-in-air",
+      "claim": "step increments airFrames when player is airborne and not jumping",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('airFrames increment when airborne', async t => {\n  const level = { platforms: [], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.pos = [0, 10, 0];\n  state.vel = [0, -1, 0];\n  state.grounded = false;\n  state.airFrames = 3;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.airFrames, 4);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-collects-coin-when-overlapping",
+      "claim": "step collects a coin when player position overlaps with coin within COIN_RADIUS",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step, COIN_RADIUS } from '../../src/physics.js';test('collects coin when overlapping', async t => {\n  const level = { platforms: [], coins: [[5, 2, 5]], goal: { min: [0,0,0], max: [0,0,0] }, killY: -100, spawn: [0,0,0] };\n  let state = createState(level);\n  state.pos = [5, 2, 5];\n  state.vel = [0, 0, 0];\n  state.grounded = true;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.coins.length, 1);\n  assert.deepStrictEqual(next.coins, [0]);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "step-triggers-respawn-when-below-killy",
+      "claim": "step triggers respawn when player Y position falls below level.killY",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('triggers respawn when below killY', async t => {\n  const level = { platforms: [], coins: [], goal: { min: [0,0,0], max: [0,0,0] }, killY: -12, spawn: [5, 10, 3] };\n  let state = createState(level);\n  state.pos = [5, -13, 3];\n  state.vel = [0, 0, 0];\n  state.grounded = false;\n  state.deaths = 2;\n  const input = { x: 0, z: 0, jump: false };\n  const next = step(state, input, level, 0);\n  assert.strictEqual(next.deaths, 3);\n  assert.deepStrictEqual(next.pos, level.spawn);\n  assert.strictEqual(next.vel[0], 0);\n  assert.strictEqual(next.vel[1], 0);\n  assert.strictEqual(next.vel[2], 0);\n  assert.strictEqual(next.grounded, true);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    }
+  ],
+  "dropped": [
+    {
+      "name": "step-preserves-horizontal-momentum-when-no-input",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "step-limits-horizontal-speed-to-max-run-speed",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "step-resets-air-frames-on-landing",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "step-does-not-collect-coin-when-too-far",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    }
+  ],
+  "breaks": [
+    {
+      "invariant": "step-applies-air-control-reduced-acceleration",
+      "file": "src/physics.js",
+      "line": 109,
+      "code": "const friction = (held) => (held ? RUN_FRICTION : STOP_FRICTION);",
+      "why": "The friction function no longer checks grounded state, so air movement incorrectly applies ground friction.",
+      "fix": {
+        "file": "src/physics.js",
+        "diff": "--- a/src/physics.js\n+++ b/src/physics.js\n@@ -106,7 +106,7 @@\n function integrate(state, pos, move, jumping, boxes) {\n   // sideways: accelerate toward the stick, friction eats the rest\n   const accel = (state.grounded ? RUN_ACCEL : RUN_ACCEL * AIR_CONTROL) * DT;\n-  const friction = (held) => (held ? RUN_FRICTION : STOP_FRICTION);\n+  const friction = (held) => (state.grounded ? (held ? RUN_FRICTION : STOP_FRICTION) : 1);\n   const vel = [\n     (state.vel[0] + move.x * accel) * friction(move.x !== 0),\n     Math.max(state.vel[1] - GRAVITY * DT, -TERMINAL_SPEED),\n",
+        "proved": true
+      }
+    }
+  ],
+  "own_suite": {
+    "base": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    "head": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    }
+  },
+  "sandbox": {
+    "snapshots": [
+      {
+        "label": "base",
+        "image": "92fd8fad-6d0f-4140-a72d-578d3a221317"
+      },
+      {
+        "label": "head",
+        "image": "c116f451-7f7d-416b-ba0f-7d5864cd64b9"
+      },
+      {
+        "label": "fix:src/physics.js",
+        "image": "2f4bcbf1-9d99-4d14-9ad8-19fe8c5ad9c7"
+      }
+    ],
+    "seconds": 26.4223
+  },
+  "models": [
+    {
+      "role": "intent",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "tokens_in": 1401,
+      "tokens_out": 96,
+      "ms": 2736.5
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 5435,
+      "tokens_out": 3573,
+      "ms": 14553.3
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 7723,
+      "tokens_out": 1246,
+      "ms": 7142.3
+    },
+    {
+      "role": "judge",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "tokens_in": 2111,
+      "tokens_out": 1173,
+      "ms": 6588.5
+    },
+    {
+      "role": "fix",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "tokens_in": 4672,
+      "tokens_out": 1420,
+      "ms": 4226.1
+    }
+  ],
+  "cost_est_usd": 0.023,
+  "timeline": [
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "done",
+      "data": {
+        "repo": "local/hopper",
+        "base_sha": "489ee1ef7e4d",
+        "head_sha": "8373cf89d84b",
+        "title": "Refactor physics step into integrate(); tune jump feel",
+        "files": [
+          "src/physics.js"
+        ]
+      }
+    },
+    {
+      "t_ms": 0,
+      "stage": "intent",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 2739,
+      "stage": "intent",
+      "type": "done",
+      "data": {
+        "summary": "The pull request refactors the physics step function into a separate integrate() function and adjusts jump-related constants to improve readability and feel.",
+        "intended_changes": [
+          "Increased coyote frames from 4 to 6 to reduce missed jumps near platform edges.",
+          "Raised terminal fall speed from 18 to 22 to make long falls feel snappier and landings more responsive."
+        ],
+        "dependency_bumps": []
+      }
+    },
+    {
+      "t_ms": 2739,
+      "stage": "pin",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "player-box-dimensions-consistent",
+        "claim": "playerBox returns a box whose dimensions match PLAYER_HALF and PLAYER_HEIGHT constants",
+        "target_file": "src/physics.js",
+        "target_symbol": "playerBox"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-preserves-horizontal-momentum-when-no-input",
+        "claim": "step preserves horizontal velocity when grounded and no directional input is given",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "claim": "step applies reduced horizontal acceleration when in the air",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-enforces-terminal-speed-limit",
+        "claim": "step clamps vertical velocity to TERMINAL_SPEED when falling",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-limits-horizontal-speed-to-max-run-speed",
+        "claim": "step clamps horizontal velocity magnitude to MAX_RUN_SPEED when exceeded",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-jump-velocity-when-conditions-met",
+        "claim": "step sets vertical velocity to JUMP_SPEED when jump is buffered and coyote time allows",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-jump-buffer-after-jump",
+        "claim": "step resets jump buffer to zero after a jump is executed",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-increments-air-frames-when-in-air",
+        "claim": "step increments airFrames when player is airborne and not jumping",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-air-frames-on-landing",
+        "claim": "step resets airFrames to zero when player lands on a platform",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-collects-coin-when-overlapping",
+        "claim": "step collects a coin when player position overlaps with coin within COIN_RADIUS",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-does-not-collect-coin-when-too-far",
+        "claim": "step does not collect a coin when player position is farther than COIN_RADIUS from coin",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "step-triggers-respawn-when-below-killy",
+        "claim": "step triggers respawn when player Y position falls below level.killY",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "pin",
+      "type": "done",
+      "data": {
+        "kept": 12,
+        "dropped": [
+          {
+            "name": "step-preserves-horizontal-momentum-when-no-input",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "step-limits-horizontal-speed-to-max-run-speed",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "step-resets-air-frames-on-landing",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "step-does-not-collect-coin-when-too-far",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          }
+        ]
+      }
+    },
+    {
+      "t_ms": 17303,
+      "stage": "base",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "player-box-dimensions-consistent",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-preserves-horizontal-momentum-when-no-input",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-enforces-terminal-speed-limit",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-limits-horizontal-speed-to-max-run-speed",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-jump-velocity-when-conditions-met",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-jump-buffer-after-jump",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-increments-air-frames-when-in-air",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-air-frames-on-landing",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-collects-coin-when-overlapping",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-does-not-collect-coin-when-too-far",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 27443,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-triggers-respawn-when-below-killy",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 36687,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-preserves-horizontal-momentum-when-no-input",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 36687,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-limits-horizontal-speed-to-max-run-speed",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 36687,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-air-frames-on-landing",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 36687,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-does-not-collect-coin-when-too-far",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "player-box-dimensions-consistent",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-preserves-horizontal-momentum-when-no-input",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-enforces-terminal-speed-limit",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-limits-horizontal-speed-to-max-run-speed",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-jump-velocity-when-conditions-met",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-jump-buffer-after-jump",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-increments-air-frames-when-in-air",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-air-frames-on-landing",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-collects-coin-when-overlapping",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-does-not-collect-coin-when-too-far",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 38521,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "step-triggers-respawn-when-below-killy",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 40017,
+      "stage": "base",
+      "type": "done",
+      "data": {
+        "pinned": [
+          "player-box-dimensions-consistent",
+          "step-applies-air-control-reduced-acceleration",
+          "step-enforces-terminal-speed-limit",
+          "step-applies-jump-velocity-when-conditions-met",
+          "step-resets-jump-buffer-after-jump",
+          "step-increments-air-frames-when-in-air",
+          "step-collects-coin-when-overlapping",
+          "step-triggers-respawn-when-below-killy"
+        ],
+        "flaky": [],
+        "repaired": [
+          "step-does-not-collect-coin-when-too-far",
+          "step-limits-horizontal-speed-to-max-run-speed",
+          "step-preserves-horizontal-momentum-when-no-input",
+          "step-resets-air-frames-on-landing"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "checkpoint": "92fd8fad-6d0f-4140-a72d-578d3a221317"
+      }
+    },
+    {
+      "t_ms": 40017,
+      "stage": "head",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "player-box-dimensions-consistent",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-enforces-terminal-speed-limit",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-jump-velocity-when-conditions-met",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-resets-jump-buffer-after-jump",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-increments-air-frames-when-in-air",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-collects-coin-when-overlapping",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 43192,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "step-triggers-respawn-when-below-killy",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 44684,
+      "stage": "head",
+      "type": "done",
+      "data": {
+        "flips": [
+          "step-applies-air-control-reduced-acceleration"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "branch": "c116f451-7f7d-416b-ba0f-7d5864cd64b9"
+      }
+    },
+    {
+      "t_ms": 44684,
+      "stage": "judge",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 51275,
+      "stage": "judge",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "kind": "silent",
+        "reason": "The refactor accidentally removed the `state.grounded` check from the friction function, causing ground friction (RUN_FRICTION=0.985) to be applied in the air where BASE used 1.0, reducing effective air acceleration. The PR claims 'same math' and only announces coyote/terminal speed changes."
+      }
+    },
+    {
+      "t_ms": 51275,
+      "stage": "judge",
+      "type": "done",
+      "data": {
+        "silent": [
+          "step-applies-air-control-reduced-acceleration"
+        ],
+        "intended": []
+      }
+    },
+    {
+      "t_ms": 51275,
+      "stage": "fix",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 62961,
+      "stage": "fix",
+      "type": "progress",
+      "data": {
+        "name": "step-applies-air-control-reduced-acceleration",
+        "file": "src/physics.js",
+        "line": 109,
+        "proved": true
+      }
+    },
+    {
+      "t_ms": 62961,
+      "stage": "fix",
+      "type": "done",
+      "data": {
+        "proved": [
+          "step-applies-air-control-reduced-acceleration"
+        ]
+      }
+    },
+    {
+      "t_ms": 62961,
+      "stage": "seal",
+      "type": "start",
+      "data": {}
+    }
+  ],
+  "sha256": "ad4e2baf87a589de7a04630a729c4bfb40b464f89e9e4eb2d39f3cddbfc9d5e2"
+}

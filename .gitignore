@@ -3,7 +3,7 @@
 .venv/
 __pycache__/
 .pytest_cache/
-runs/
+/runs/
 node_modules/
 .next/
 .vercel/
