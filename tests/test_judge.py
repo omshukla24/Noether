@@ -1,0 +1,89 @@
+import json
+
+import httpx
+
+from noether.judge import JUDGE_SCHEMA, judge_flips
+from noether.model import Flip, Intent, Invariant, Location
+
+INTENT = Intent("Tidies clamp.", ["clamp stops returning the bound itself"])
+
+
+def flip(name, **kw):
+    inv = Invariant(name, f"{name} claim", "src/physics.js", "clamp", f"// test code of {name}")
+    return Flip(inv, f"AssertionError in {name}", **kw)
+
+
+def verdicts(*entries):
+    return json.dumps({"verdicts": [{"name": n, "kind": k, "reason": r} for n, k, r in entries]})
+
+
+def test_no_flips_means_no_call(make_client, change):
+    client = make_client()
+    assert judge_flips(client, INTENT, change, []) == []
+    assert client.sent == []
+
+
+def test_intended_silent_and_unsure(make_client, change):
+    client = make_client(make_client.ok(verdicts(("a-test", "intended", "the PR says so"),
+                                                 ("b-test", "silent", "nothing announces it"),
+                                                 ("c-test", "unsure", "too little context"))))
+    flips = [flip("a-test"), flip("b-test"), flip("c-test")]
+    out = judge_flips(client, INTENT, change, flips)
+    assert [f.kind for f in out] == ["intended", "silent", "silent"]
+    assert out[0].reason == "the PR says so" and out[1].reason == "nothing announces it"
+    assert "unsure" in out[2].reason and "too little context" in out[2].reason
+    assert len(client.sent) == 1  # one call for all flips
+
+
+def test_inputs_are_not_mutated(make_client, change):
+    original = flip("a-test")
+    out = judge_flips(make_client(make_client.ok(verdicts(("a-test", "intended", "announced")))), INTENT, change, [original])
+    assert out[0] is not original and out[0].invariant is original.invariant
+    assert original.kind == "silent" and original.reason == ""
+
+
+def test_missing_name_is_silent(make_client, change):
+    out = judge_flips(make_client(make_client.ok(verdicts(("other", "intended", "x")))), INTENT, change, [flip("a-test")])
+    assert out[0].kind == "silent" and "no verdict" in out[0].reason
+
+
+def test_first_verdict_per_name_wins(make_client, change):
+    reply = verdicts(("a-test", "silent", "first"), ("a-test", "intended", "second"))
+    assert judge_flips(make_client(make_client.ok(reply)), INTENT, change, [flip("a-test")])[0].reason == "first"
+
+
+def test_invalid_json_is_silent(make_client, change):
+    client = make_client(make_client.ok("I think it is fine."), make_client.ok("still prose"))
+    out = judge_flips(client, INTENT, change, [flip("a-test"), flip("b-test")])
+    assert [f.kind for f in out] == ["silent", "silent"]
+    assert all("could not be used" in f.reason for f in out)
+
+
+def test_an_unknown_kind_fails_the_schema_and_is_silent(make_client, change):
+    bad = verdicts(("a-test", "maybe", "hmm"))
+    out = judge_flips(make_client(make_client.ok(bad), make_client.ok(bad)), INTENT, change, [flip("a-test")])
+    assert out[0].kind == "silent"
+
+
+def test_model_errors_are_silent(make_client, change):
+    client = make_client(httpx.Response(401, json={"error": "nope"}))
+    out = judge_flips(client, INTENT, change, [flip("a-test")])
+    assert out[0].kind == "silent" and "HTTP 401" in out[0].reason
+
+
+def test_existing_location_and_fix_are_kept(make_client, change):
+    f = flip("a-test", location=Location("src/physics.js", 2, "x", "y"))
+    out = judge_flips(make_client(make_client.ok(verdicts(("a-test", "silent", "r")))), INTENT, change, [f])
+    assert out[0].location is f.location
+
+
+def test_prompt_carries_intent_pr_diff_and_each_flip(make_client, change):
+    client = make_client(make_client.ok(verdicts(("a-test", "silent", "r"))))
+    judge_flips(client, INTENT, change, [flip("a-test")])
+    sent = client.sent[0]
+    user = sent["messages"][-1]["content"]
+    assert sent["model"] == "nvidia/Nemotron-3-Ultra-550b-a55b"
+    assert sent["response_format"]["json_schema"]["schema"] == JUDGE_SCHEMA
+    for needle in ("Tidy clamp", "Small cleanup.", "clamp stops returning the bound itself", "hi - 1",
+                   "a-test claim", "// test code of a-test", "AssertionError in a-test"):
+        assert needle in user
