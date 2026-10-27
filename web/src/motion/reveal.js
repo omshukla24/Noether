@@ -67,7 +67,7 @@ export function initReveals(root = document) {
 
   root.querySelectorAll('[data-split]').forEach((el) => {
     const words = splitWords(el);
-    if (reduced || el.closest('[data-hero]')) return; // the hero runs its own intro
+    if (reduced || el.closest('[data-hero]')) return; // the hero headline rises by CSS (Hero.module.css)
     track(gsap.from(words, {
       yPercent: REVEAL.yPercent,
       duration: REVEAL.duration,
@@ -110,18 +110,4 @@ export function initReveals(root = document) {
   });
 
   return () => triggers.forEach((t) => t.kill());
-}
-
-// Hero headline: masked lines rise and un-blur, then the supporting cast follows.
-export function playHeroIntro(hero) {
-  if (!hero) return null;
-  const lines = hero.querySelectorAll('[data-line]');
-  const cast = hero.querySelectorAll('[data-hero-cast]');
-  if (prefersReducedMotion()) {
-    gsap.set([lines, cast], { clearProps: 'all' });
-    return null;
-  }
-  return gsap.timeline()
-    .from(lines, { yPercent: 110, filter: `blur(${REVEAL.blur}px)`, duration: 1.35, stagger: 0.12, ease: EASE.emergence, clearProps: 'filter' })
-    .from(cast, { y: 24, opacity: 0, filter: 'blur(8px)', duration: 1, stagger: 0.08, ease: EASE.settle, clearProps: 'filter' }, 0.45);
 }

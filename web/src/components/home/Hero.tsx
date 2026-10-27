@@ -6,7 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GAP, formatChange, ghostRun, type Build, type Input } from "@/hopper/sim";
 import { prefersReducedMotion } from "@/motion/env.js";
 import { smoothstep } from "@/motion/math.js";
-import { playHeroIntro } from "@/motion/reveal.js";
 import { loadHopper } from "@/scenes/load";
 import { readPalette } from "@/scenes/palette";
 import type { HopperScene, Hud } from "@/scenes/hopper/scene";
@@ -125,12 +124,8 @@ export function Hero({ ownSuitePassed }: HeroProps) {
       });
     });
 
-    const intro = () => playHeroIntro(root);
-    window.addEventListener("noether:ready", intro, { once: true });
-
     return () => {
       disposed = true;
-      window.removeEventListener("noether:ready", intro);
       window.clearTimeout(toastTimer.id);
       trigger?.kill();
       io?.disconnect();
@@ -247,16 +242,16 @@ export function Hero({ ownSuitePassed }: HeroProps) {
         </div>
 
         <div className={styles.copy} data-hero>
-          <p className="label" data-hero-cast>01 · Observe · Hopper, a 3D platformer</p>
+          <p className="label">01 · Observe · Hopper, a 3D platformer</p>
           <h1 className={styles.title}>
             <span className={styles.lineMask}><span data-line>CI is green.</span></span>
             <span className={styles.lineMask}><span data-line>The jump is <em>broken.</em></span></span>
           </h1>
-          <p className={styles.lead} data-hero-cast>
+          <p className={styles.lead}>
             A refactor pull request. Its own {ownSuitePassed} tests pass before and after. The same recorded run clears the
             last gap on base and comes down {Math.abs(jh.margin).toFixed(2)} units short on head. Play both.
           </p>
-          <div className={styles.controls} data-hero-cast>
+          <div className={styles.controls}>
             <button type="button" className={styles.play} onClick={() => game.current?.focus()}>
               {playing ? "Playing: Escape to stop" : `Play the ${BUILD_NAME[build].toLowerCase()} build`}
             </button>
@@ -278,7 +273,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
               Replay the run
             </button>
           </div>
-          <p className={styles.keys} data-hero-cast aria-hidden="true">
+          <p className={styles.keys} aria-hidden="true">
             <kbd>A</kbd><kbd>D</kbd> run · <kbd>W</kbd><kbd>S</kbd> depth · <kbd>Space</kbd> jump
           </p>
         </div>
