@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>Noether</title>
+  <rect width="32" height="32" rx="2" fill="#F5F3ED"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="1.5" fill="none" stroke="#DEDBD1"/>
+  <rect x="14.6" y="5" width="2.8" height="12" fill="#4B3FE4"/>
+  <rect x="14.6" y="19.5" width="2.8" height="7.5" fill="#4B3FE4"/>
+  <rect x="17.6" y="19.5" width="2.8" height="7.5" fill="#D93A22"/>
+</svg>

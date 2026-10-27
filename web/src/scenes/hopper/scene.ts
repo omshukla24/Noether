@@ -54,6 +54,12 @@ export interface HopperOptions {
   labels: HopperLabels;
   onHud: (hud: Hud) => void;
   onEvent?: (event: PlayerEvent, build: Build) => void;
+  /** which two builds the recorded run is replayed on, in label order; the hero shows base and head */
+  ghosts?: [Build, Build];
+  /** the build the player starts on */
+  build?: Build;
+  /** world units the dive frame looks higher, which moves the gap lower on screen to make room for copy above it */
+  diveShift?: number;
 }
 
 export interface HopperScene {
@@ -86,17 +92,20 @@ interface Ghost {
   freeze: number;
 }
 
-function makeGhost(tag: Tag, palette: Palette): Ghost {
-  const run = ghostRun(tag);
+// a build that breaks the jump is drawn in vermilion and dashed; the others in indigo
+const tintOf = (build: Build, palette: Palette) => (build === "head" ? palette.broken : palette.accent);
+
+function makeGhost(tag: Tag, build: Build, palette: Palette): Ghost {
+  const run = ghostRun(build);
   const last = (run.fellAtFrame ?? run.frames.length) - 1;
   const pts: number[] = [];
   for (let i = 0; i <= last; i++) {
     const f = run.frames[i];
     pts.push(f.pos[0], f.pos[1] + 0.8, f.pos[2] + LANE[tag]);
   }
-  const line = trailLine(pts, tag === "base" ? palette.accent : palette.broken, tag === "head");
+  const line = trailLine(pts, tintOf(build, palette), build === "head");
   const down = run.jump?.downFrame ?? last;
-  return { run, line, last, freeze: Math.min(last, down + (tag === "base" ? 4 : 16)) };
+  return { run, line, last, freeze: Math.min(last, down + (build === "head" ? 16 : 4)) };
 }
 
 function squashScale(vy: number, impulse: number): number {
@@ -112,9 +121,12 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   let dpr = Math.min(window.devicePixelRatio || 1, PERF.dprMax);
   renderer.setPixelRatio(dpr);
 
-  const world = buildWorld(palette);
+  const [first, second] = opts.ghosts ?? (["base", "head"] as [Build, Build]);
+  const world = buildWorld(palette, { base: tintOf(first, palette), head: tintOf(second, palette) });
   const camera = new THREE.PerspectiveCamera(HOPPER_VIEW.fov, 1, 0.5, 260);
-  const ghosts: Record<Tag, Ghost> = { base: makeGhost("base", palette), head: makeGhost("head", palette) };
+  const ghosts: Record<Tag, Ghost> = { base: makeGhost("base", first, palette), head: makeGhost("head", second, palette) };
+  // the camera follows whichever recorded run keeps going longest
+  const leader = ghosts.base.last >= ghosts.head.last ? ghosts.base : ghosts.head;
   world.scene.add(ghosts.base.line, ghosts.head.line);
   const total = Math.max(ghosts.base.last, ghosts.head.last);
 
@@ -126,8 +138,8 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
     trailLine([GAP.from, bracketY, 0, GAP.to, bracketY, 0], palette.ink, false),
     trailLine([GAP.from, bracketY - 0.4, 0, GAP.from, bracketY + 0.4, 0], palette.ink, false),
     trailLine([GAP.to, bracketY - 0.4, 0, GAP.to, bracketY + 0.4, 0], palette.ink, false),
-    trailLine([jumpB.reach, GAP.top, 0.2, jumpB.reach, GAP.top + 1.6, 0.2], palette.accent, false),
-    trailLine([jumpH.reach, GAP.top, 0.2, jumpH.reach, GAP.top + 1.6, 0.2], palette.broken, false),
+    trailLine([jumpB.reach, GAP.top, 0.2, jumpB.reach, GAP.top + 1.6, 0.2], tintOf(first, palette), false),
+    trailLine([jumpH.reach, GAP.top, 0.2, jumpH.reach, GAP.top + 1.6, 0.2], tintOf(second, palette), false),
   ];
   measures.forEach((m) => world.measure.add(m));
   const lines = [ghosts.base.line, ghosts.head.line, ...measures];
@@ -135,7 +147,7 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   // world clock and the player
   let t = LEAD_IN;
   let acc = 0;
-  let build: Build = "head";
+  let build: Build = opts.build ?? "head";
   let input: Input = IDLE;
   let playing = false;
   let dive = 0;
@@ -216,10 +228,10 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
     body.position.z += LANE[tag];
     const geo = g.line.geometry as unknown as { instanceCount: number };
     geo.instanceCount = Math.max(0, i);
-    if (tag === "head") {
+    if (g.run.build === "head") {
       const end = g.run.frames[g.last];
       world.impact.visible = fell || (dive > 0.02 && g.run.fellAtFrame !== null);
-      world.impact.position.set(end.pos[0], LEVEL.killY + 0.02, end.pos[2] + LANE.head);
+      world.impact.position.set(end.pos[0], LEVEL.killY + 0.02, end.pos[2] + LANE[tag]);
     }
     return { x: a.pos[0], p: momentum(a.vel), state: fell ? "fell" : g.run.reachedGoal && i >= g.last ? "cleared" : "running" };
   }
@@ -236,14 +248,17 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   }
 
   function aimCamera(dt: number, snap: boolean) {
-    const ghostLead = t > 0 && t < total ? ghosts.base.run.frames[clamp(t, 0, ghosts.base.last)].pos[0] - 1.5 : null;
+    const ghostLead = t > 0 && t < total ? leader.run.frames[clamp(t, 0, leader.last)].pos[0] - 1.5 : null;
     const focusX = touched || ghostLead === null ? state.pos[0] : ghostLead;
     const fit = clamp(1.25 / (width / height), 1, 1.9); // narrow screens step back
     wantTarget.set(focusX + FOLLOW.ahead, FOLLOW.y, 0.5);
     wantPos.copy(wantTarget).addScaledVector(FOLLOW.offset, fit);
+    const shift = opts.diveShift ?? 0;
     const diveTarget = tmp.copy(DIVE.target);
+    diveTarget.y += shift;
     wantTarget.lerp(diveTarget, dive);
     const divePos = DIVE.position.clone().sub(DIVE.target).multiplyScalar(fit).add(DIVE.target);
+    divePos.y += shift;
     wantPos.lerp(divePos, dive);
     if (snap) {
       camPos.copy(wantPos);

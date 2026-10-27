@@ -141,7 +141,7 @@ export interface World {
   dispose: () => void;
 }
 
-export function buildWorld(p: Palette): World {
+export function buildWorld(p: Palette, tint: { base: string; head: string } = { base: p.accent, head: p.broken }): World {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(p.ground);
   scene.fog = new THREE.Fog(p.ground, 34, 78);
@@ -259,7 +259,7 @@ export function buildWorld(p: Palette): World {
   const ghostMat = (color: string) =>
     keep(new THREE.MeshStandardMaterial({ color, roughness: 0.5, transparent: true, opacity: 0.55, depthWrite: false }));
   const player = body(playerMat);
-  const ghosts = { base: body(ghostMat(p.accent)), head: body(ghostMat(p.broken)) };
+  const ghosts = { base: body(ghostMat(tint.base)), head: body(ghostMat(tint.head)) };
   ghosts.base.mesh.castShadow = false;
   ghosts.head.mesh.castShadow = false;
   scene.add(player.group, ghosts.base.group, ghosts.head.group);

@@ -1,0 +1,51 @@
+.plate {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 6vw, 96px);
+  background-color: var(--ground);
+  animation: arrive var(--dur-slow) var(--ease-settle) both;
+}
+/* the notebook grid stays, but dimmed behind the sentence */
+.dim { position: absolute; inset: 0; background: var(--ground); opacity: 0.55; pointer-events: none; }
+.figure { position: relative; margin: 0; max-width: 18ch; }
+.theorem {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 1rem + 5.2vw, 5.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+.cap {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rule { display: inline-block; width: 36px; border-top: 2px solid var(--accent); }
+.close {
+  position: absolute;
+  right: clamp(16px, 4vw, 40px);
+  top: clamp(16px, 4vw, 40px);
+  min-height: 44px;
+  padding: 0 14px;
+  border: var(--bd-hair);
+  border-radius: var(--r-chip);
+  background: var(--plate);
+  color: var(--ink);
+  font: 500 var(--fs-small) / 1 var(--font-body);
+  cursor: pointer;
+}
+.close:hover { border-color: var(--ink); }
+.close kbd { margin-left: var(--s-2); font: 400 var(--fs-micro) / 1 var(--font-mono); color: var(--muted); }
+@keyframes arrive { from { opacity: 0; } to { opacity: 1; } }

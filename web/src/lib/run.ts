@@ -1,9 +1,12 @@
 // The sealed Hopper run the home page tells the story of. Imported at build time
 // by server components, which hand each section only the slice it draws.
 import hopper from "../../public/runs/hopper.json";
+import announced from "../../public/runs/20261027-025352-edb700.json";
 import type { Bundle, Stage, StageEvent } from "./bundle";
 
 export const RUN = hopper as unknown as Bundle;
+/** A second real run of the same pull request, where the judge called the one flip intended. */
+export const RUN_INTENDED = announced as unknown as Bundle;
 
 export const shortId = (uuid: string) => uuid.slice(0, 8);
 
@@ -35,3 +38,30 @@ export function tokensByRole(bundle: Bundle) {
   }
   return [...out].map(([role, row]) => ({ role, ...row }));
 }
+
+export interface ModelRow {
+  model: string;
+  roles: string[];
+  calls: number;
+  tokensIn: number;
+  tokensOut: number;
+  ms: number;
+}
+
+/** One row per model, in the order the pipeline first called it: Nano reads, Super writes, Ultra judges. */
+export function tokensByModel(bundle: Bundle): ModelRow[] {
+  const out = new Map<string, ModelRow>();
+  for (const m of bundle.models) {
+    const row = out.get(m.model) ?? { model: m.model, roles: [], calls: 0, tokensIn: 0, tokensOut: 0, ms: 0 };
+    if (!row.roles.includes(m.role)) row.roles.push(m.role);
+    row.calls += 1;
+    row.tokensIn += m.tokens_in;
+    row.tokensOut += m.tokens_out;
+    row.ms += m.ms;
+    out.set(m.model, row);
+  }
+  return [...out.values()];
+}
+
+export const formatInt = (n: number) => n.toLocaleString("en-US");
+export const formatSeconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
