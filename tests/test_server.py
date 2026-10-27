@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from noether.bundle import verify_bundle
 from noether.limits import RateLimited, RateLimiter
-from noether.live import PipelineError, parse_pr_url
+from noether.live import PipelineError, parse_pr_url, public_event
 from noether.server import RUN_ID, create_app, sse, stream_run
 from noether.store import BlobStore, LocalStore, StoreError, check_key
 from tests.replay_pipeline import load_bundle, replay_pipeline
@@ -175,6 +175,16 @@ def test_the_slot_is_released_when_the_run_ends(store):
     done = threading.Event()
     list(stream_run(replay_pipeline(speed=10_000, sleep=lambda s: None), store, PR, done.set))
     assert done.wait(2)
+
+
+def test_the_seal_event_does_not_reveal_a_server_path():
+    from noether.model import Event
+
+    sealed = Event(9, "seal", "done", {"verdict": "BROKEN", "sha256": "ab", "bundle": "/tmp/noether-run-x/bundle.json"})
+    assert public_event(sealed).data == {"verdict": "BROKEN", "sha256": "ab"}
+    assert sealed.data["bundle"]  # the pipeline still reads the path from its own copy
+    head = Event(1, "head", "done", {"bundle": "kept"})
+    assert public_event(head) is head
 
 
 def test_sse_is_one_line_per_field():

@@ -11,6 +11,7 @@ import re
 import shutil
 import tempfile
 import time
+from dataclasses import replace
 from typing import Any, Callable
 
 import httpx
@@ -41,6 +42,13 @@ def parse_pr_url(raw: str) -> tuple[str, str, int]:
 
 def canonical_url(owner: str, repo: str, number: int) -> str:
     return f"https://github.com/{owner}/{repo}/pull/{number}"
+
+
+def public_event(ev: Event) -> Event:
+    """The event as a visitor may see it: the seal event names a file on the server, which stays there."""
+    if ev.stage == "seal" and "bundle" in ev.data:
+        return replace(ev, data={k: v for k, v in ev.data.items() if k != "bundle"})
+    return ev
 
 
 def configured() -> bool:
@@ -88,7 +96,7 @@ def run_live(pr_url: str, emit: Emit, budget_s: float) -> dict[str, Any]:
 
     def guarded(ev: Event) -> None:
         nonlocal fired
-        emit(ev)
+        emit(public_event(ev))
         if not fired and ev.stage != "seal" and time.monotonic() > end:
             fired = True  # once: the abort path emits events too
             raise CapHit(f"the run reached its {budget_s:.0f} s time limit")
