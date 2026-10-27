@@ -305,9 +305,9 @@ class ContreeRunner:
                     ).wait()
                     break
                 except ContreeError as exc:
-                    # One dropped connection to the sandbox API (seen live) is not a verdict-worthy failure; a
-                    # script that outlives run_timeout is a different error and is not retried.
-                    if attempt == 0 and "timeout_type='connect'" in str(exc):
+                    # One API call that times out (connect or read, both seen live) is not a verdict-worthy
+                    # failure; a script that outlives run_timeout is a different error and is not retried.
+                    if attempt == 0 and "ApiTimeoutError" in str(exc):
                         continue
                     raise RunnerError(f"sandbox call failed: {exc}") from exc
         finally:

@@ -49,7 +49,7 @@ def parse_junit(xml: str, names: list[str]) -> dict[str, TestResult]:
         if name is not None:
             result = _case_result(name, case)
             if not result.passed and _BARE_CRASH.search(result.output) and logs.get(file):
-                result = replace(result, output=tail("the test file stopped before its checks ran. node printed:\n" + logs[file]))
+                result = replace(result, output=tail(_crash_text(logs[file])))
             seen.setdefault(name, []).append(result)
 
     out: dict[str, TestResult] = {}
@@ -87,6 +87,12 @@ def _first_int(pattern: str, text: str) -> int:
 
 def _basename(path: str) -> str:
     return re.split(r"[\\/]", path)[-1]
+
+
+def _crash_text(log: str) -> str:
+    """The error on the first line, so a one-line summary of the failure already names it."""
+    error = next((line.strip() for line in log.splitlines() if re.match(r"\s*[A-Za-z]*Error\b", line)), "")
+    return f"the test file stopped before its checks ran: {error or 'no error line'}\nnode printed:\n{log}"
 
 
 def _read_cases(xml: str) -> tuple[list[ET.Element], str]:

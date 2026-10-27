@@ -124,6 +124,7 @@ def test_a_bare_file_crash_gets_the_error_node_printed_for_that_file():
     result = parse_junit(CRASH_XML + logs, ["crash"])["crash"]
 
     assert not result.passed and IMPORT_ERROR in result.output and "ERR_TEST_FAILURE" not in result.output
+    assert result.output.splitlines()[0].endswith(IMPORT_ERROR)  # a one-line summary of the failure names the error
 
 
 def test_a_real_assertion_failure_keeps_its_own_message_even_when_a_log_follows():

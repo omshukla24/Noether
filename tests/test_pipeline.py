@@ -401,6 +401,7 @@ def test_repair_goes_to_the_model_in_small_batches_and_a_failed_batch_is_on_the_
     asked = {tuple(e["asked"]): e for e in of(events, "base", "progress") if "asked" in e}
     assert asked[(LINE_TOTAL.name, DISCOUNT.name)]["returned"] == [LINE_TOTAL.name, DISCOUNT.name]
     assert "still not valid" in asked[(SHIPPING.name,)]["error"]
+    assert asked[(LINE_TOTAL.name, DISCOUNT.name)]["why"] == {LINE_TOTAL.name: "boom", DISCOUNT.name: "boom"}
     assert of(events, "base", "done")[0]["repaired"] == sorted([LINE_TOTAL.name, DISCOUNT.name])
     assert SHIPPING.name not in [i.name for i in run.invariants]  # the original stays red and is dropped
 

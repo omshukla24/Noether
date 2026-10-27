@@ -283,7 +283,8 @@ class _Check:
             answered = {f.name for f in got} | {d["name"] for d in dropped}
             extra = {"error": "the model returned no repaired checks"} if not got and not dropped else {}
             self.event("base", "progress", repair=round_no, asked=asked, returned=[f.name for f in got],
-                       rejected=[d["name"] for d in dropped], missing=[n for n in asked if n not in answered], **extra)
+                       rejected=[d["name"] for d in dropped], missing=[n for n in asked if n not in answered],
+                       why={inv.name: " ".join(out.split())[:160] for inv, out in batch}, **extra)
             fixed += got
         return fixed
 
