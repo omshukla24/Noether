@@ -1,0 +1,5 @@
+{
+  "repo": "local/hopper",
+  "title": "Refactor physics step into integrate(); tune jump feel",
+  "body": "step() had grown into one big wall of code, so I pulled the velocity + collision part out into integrate(). Same math, just a lot easier to read now.\n\nWhile I was in there I tweaked two things for jump feel:\n\n- coyote time 4 -> 6 frames. 4 was too strict, kept eating the jump right at the edge of the ferry\n- terminal fall speed 18 -> 22 for snappier landings, long drops felt floaty\n\nNo other behaviour changes. Own tests pass and I ran through the first few platforms by hand, feels good."
+}
