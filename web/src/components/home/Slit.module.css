@@ -1,0 +1,87 @@
+/* The slit: 60vh of scroll over a sticky stage. --close narrows the porcelain page to a slit,
+   --spread opens the slit into one spectral line per pinned invariant. */
+.runway {
+  position: relative;
+  height: 160vh;
+  background: var(--ground);
+}
+
+.stage {
+  --close: 0;
+  --spread: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.dark,
+.page {
+  position: absolute;
+  inset: 0;
+}
+
+.page {
+  background: var(--ground);
+  /* closing leaves a slit a few px wide, then the slit itself fades as the lines open */
+  clip-path: inset(0 calc(var(--close) * (50% - 2px)));
+  opacity: calc(1.6 - var(--spread) * 1.6);
+  pointer-events: none;
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+}
+.line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  margin-left: -1px;
+  background: var(--hue);
+  opacity: calc(var(--spread) * 1.5);
+  transform: translateX(calc(var(--spread) * (var(--x) - 0.5) * 100vw)) scaleY(calc(0.25 + 0.75 * var(--spread)));
+  transform-origin: 50% 50%;
+}
+
+.ruler {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  top: calc(50% + 20vh);
+  color: var(--faint);
+  opacity: calc(var(--close) * (1 - var(--spread) * 0.7));
+}
+
+.caption {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  bottom: clamp(24px, 6vh, 56px);
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--faint);
+  opacity: var(--close);
+}
+
+.runway.still { height: 64vh; }
+.runway.still .stage { position: relative; height: 64vh; }
+@media (prefers-reduced-motion: reduce) {
+  .runway { height: 64vh; }
+  .stage { position: relative; height: 64vh; }
+}
+
+@media (max-width: 760px) {
+  .runway { height: 150vh; }
+  .ruler { left: 16px; right: 16px; }
+  .caption { left: 16px; right: 16px; }
+}
