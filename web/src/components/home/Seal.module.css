@@ -1,0 +1,92 @@
+/* 08 Seal: the open slot on an indigo wash, the workflow to copy, a velocity marquee. */
+.seal {
+  background: var(--accent-weak);
+  padding-top: var(--s-9);
+  overflow: hidden;
+}
+.inner { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 56px); }
+.head { max-width: 62ch; }
+.title { margin-top: var(--s-3); font-size: clamp(2.6rem, 1.2rem + 4.4vw, 5.2rem); line-height: 0.96; letter-spacing: -0.04em; }
+.title em { font-style: italic; color: var(--accent-ink); }
+.lede { margin: var(--s-4) 0 0; max-width: 50ch; color: var(--ink); font-size: var(--fs-lead); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--s-8); margin-top: var(--s-8); align-items: start; }
+.left { display: grid; gap: var(--s-7); }
+
+.slot { display: grid; gap: var(--s-2); }
+.slotRow { display: flex; gap: var(--s-3); }
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-chip);
+  background: var(--plate);
+  color: var(--ink);
+  font: 400 var(--fs-mono) / 1 var(--font-mono);
+}
+.input::placeholder { color: var(--faint); }
+.input[aria-invalid="true"] { border-color: var(--broken); }
+.go {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-chip);
+  background: var(--ink);
+  color: var(--ground);
+  font: 500 var(--fs-small) / 1 var(--font-body);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease-settle), border-color var(--dur) var(--ease-settle), transform var(--dur-fast) var(--ease-settle);
+}
+.go:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+.go:active { transform: scale(0.97); }
+.hint, .hintError { margin: 0; font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); }
+.hintError { color: var(--broken-ink); }
+
+.proof { display: grid; gap: var(--s-2); padding-top: var(--s-5); border-top: 1px solid var(--accent); }
+.hash { margin: 0; font-family: var(--font-mono); font-size: var(--fs-small); overflow-wrap: anywhere; letter-spacing: 0.02em; }
+.verify {
+  justify-self: start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-ink);
+  font-weight: 500;
+  text-underline-offset: 5px;
+}
+
+.code { margin: 0; border: var(--bd-hair); border-radius: var(--r-plate); background: var(--plate); box-shadow: var(--lift); min-width: 0; }
+.codeHead { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4); border-bottom: var(--bd-hair); }
+.copy {
+  min-height: 36px;
+  padding: 0 14px;
+  border: var(--bd-hair);
+  border-radius: var(--r-chip);
+  background: var(--ground);
+  color: var(--ink);
+  font: 500 var(--fs-micro) / 1 var(--font-mono);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--ink); }
+.code pre { margin: 0; padding: var(--s-4); overflow-x: auto; font-family: var(--font-mono); font-size: var(--fs-micro); line-height: 1.75; }
+.codeLine { display: block; white-space: pre; }
+.ln { display: inline-block; width: 3ch; margin-right: var(--s-3); color: var(--faint); user-select: none; }
+
+/* velocity marquee: speeds up and skews with scroll, flips direction when scrolling back */
+.marquee { margin-top: var(--s-9); padding: var(--s-5) 0; border-top: 1px solid var(--accent); overflow: hidden; background: var(--ground); }
+.track { display: flex; width: max-content; will-change: transform; }
+.item { display: inline-flex; align-items: center; gap: var(--s-6); padding-right: var(--s-6); font-family: var(--font-display); font-size: clamp(3.4rem, 2rem + 6vw, 8rem); line-height: 1; letter-spacing: -0.04em; white-space: nowrap; }
+.item b { font-weight: 500; }
+.ok { color: var(--accent); }
+.bad { color: var(--broken); }
+.dot { display: inline-block; width: 2px; height: 0.7em; background: var(--faint); }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-7); }
+}
+@media (max-width: 520px) {
+  .slotRow { flex-direction: column; }
+}

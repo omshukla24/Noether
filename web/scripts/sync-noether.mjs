@@ -27,6 +27,19 @@ for (const name of sources) {
   }
 }
 
+// The GitHub Action example shown on the home page is the real file, copied in so the build needs nothing outside web/.
+const EXAMPLE = [join(WEB, "..", "examples", "noether.yml"), join(WEB, "src", "content", "noether.yml")];
+{
+  const want = readFileSync(EXAMPLE[0]);
+  if (!existsSync(EXAMPLE[1]) || !readFileSync(EXAMPLE[1]).equals(want)) {
+    stale.push("examples/noether.yml");
+    if (!CHECK) {
+      mkdirSync(dirname(EXAMPLE[1]), { recursive: true });
+      writeFileSync(EXAMPLE[1], want);
+    }
+  }
+}
+
 if (existsSync(OUT)) {
   for (const name of readdirSync(OUT).filter((n) => n.endsWith(".py") && !sources.includes(n))) {
     stale.push(name);
