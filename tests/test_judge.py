@@ -2,7 +2,7 @@ import json
 
 import httpx
 
-from noether.judge import JUDGE_SCHEMA, judge_flips
+from noether.judge import JUDGE_SCHEMA, build_judge_messages, judge_flips
 from noether.model import Flip, Intent, Invariant, Location
 
 INTENT = Intent("Tidies clamp.", ["clamp stops returning the bound itself"])
@@ -87,3 +87,11 @@ def test_prompt_carries_intent_pr_diff_and_each_flip(make_client, change):
     for needle in ("Tidy clamp", "Small cleanup.", "clamp stops returning the bound itself", "hi - 1",
                    "a-test claim", "// test code of a-test", "AssertionError in a-test"):
         assert needle in user
+
+
+def test_the_judge_reads_a_stated_rule_as_covering_every_input_and_unchanged_as_silent(change):
+    system = build_judge_messages(INTENT, change, [flip("a-test")])[0]["content"]
+
+    assert "A stated rule announces every input it applies to, not only its examples" in system
+    assert "an input under an exception the text states, is silent" in system
+    assert "whatever the diff or its comments suggest" in system
