@@ -1,0 +1,162 @@
+/* 06 Re-prove: the fixed build on the same recorded run. A sticky stage like the hero's, with the proof beside it. */
+.runway {
+  position: relative;
+  height: 170vh;
+  --note: 0;
+  /* the level fills the stage except for the column the proof sits in */
+  --proof: min(440px, 34vw);
+  --gutter: clamp(16px, 4vw, 56px);
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ground);
+}
+
+.game {
+  position: absolute;
+  inset: 0 calc(var(--proof) + var(--gutter) + 24px) 0 0;
+  outline: none;
+}
+.game:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+
+.copy {
+  position: absolute;
+  left: clamp(16px, 4vw, 56px);
+  top: clamp(84px, 13vh, 132px);
+  max-width: min(520px, calc(100vw - 32px));
+}
+.title { margin-top: var(--s-3); font-size: clamp(2.2rem, 1.2rem + 2.8vw, 4rem); line-height: 1; letter-spacing: -0.035em; }
+.deck { margin: var(--s-4) 0 0; max-width: 44ch; font-size: var(--fs-lead); color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
+.keys { margin: var(--s-3) 0 0; font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); }
+.keys kbd {
+  display: inline-block;
+  min-width: 1.7em;
+  margin-right: 3px;
+  padding: 1px 5px;
+  border: var(--bd-hair);
+  border-bottom-width: 2px;
+  border-radius: var(--r-chip);
+  background: var(--plate);
+  font: inherit;
+  text-align: center;
+}
+
+/* the fix and what was proved about it, right */
+.proof {
+  position: absolute;
+  right: clamp(16px, 4vw, 56px);
+  top: clamp(84px, 13vh, 132px);
+  width: var(--proof);
+  display: grid;
+  gap: var(--s-4);
+}
+.diff,
+.ledger,
+.margins {
+  margin: 0;
+  background: var(--plate);
+  border: var(--bd-hair);
+  border-radius: var(--r-plate);
+  box-shadow: var(--lift);
+}
+.cap {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: 8px 14px;
+  background: var(--ground-sunk);
+  border-bottom: var(--bd-hair);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.cap code { font: inherit; color: var(--ink); }
+.diff pre { margin: 0; padding: 10px 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.7; outline-offset: -2px; }
+.diff code { display: block; width: max-content; min-width: 100%; font: inherit; }
+.row { display: block; padding: 0 14px 0 6px; white-space: pre; }
+.row i { display: inline-block; width: 3.2ch; margin-right: 1ch; text-align: right; font-style: normal; color: var(--faint); user-select: none; }
+.row b { display: inline-block; width: 2ch; font-weight: 400; color: var(--faint); user-select: none; }
+.add { background: var(--conserved-bed); }
+.add b { color: var(--accent-ink); }
+.del { background: var(--broken-bed); }
+.del b { color: var(--broken-ink); }
+
+.ledger { padding: 14px 16px; }
+.ledger ul { margin: var(--s-2) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s-2); }
+.ledger li { position: relative; padding-left: 20px; font-size: var(--fs-small); }
+.ledger li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 9px; height: 9px; background: var(--accent); }
+.ledger code { font-family: var(--font-mono); font-size: 0.74rem; overflow-wrap: anywhere; }
+.ledger b { font-weight: 500; color: var(--accent-ink); }
+
+/* margin at the lip: a measured bar per build, centred on the lip of the far platform */
+.margins {
+  position: absolute;
+  left: clamp(16px, 4vw, 56px);
+  bottom: clamp(16px, 3vh, 32px);
+  width: min(460px, 40vw);
+  padding: 12px 14px;
+  opacity: var(--note);
+  transform: translateY(calc((1 - var(--note)) * 20px));
+}
+.margins ul { margin: var(--s-2) 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.margins li { display: grid; grid-template-columns: 3.6em minmax(0, 1fr) 5.2em 8.2em; gap: var(--s-3); align-items: center; font-family: var(--font-mono); font-size: var(--fs-micro); }
+.rowName { text-transform: uppercase; letter-spacing: var(--tracking-caps); color: var(--muted); }
+.track { position: relative; height: 12px; border-block: var(--bd-faint); }
+.lip { position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: var(--ink); }
+.fill { position: absolute; top: 3px; bottom: 3px; background: var(--accent); }
+.margins li[data-short] .fill { background: var(--broken); }
+.val { text-align: right; color: var(--accent-ink); font-weight: 500; }
+.margins li[data-short] .val { color: var(--broken-ink); }
+.pc { color: var(--muted); }
+
+.you {
+  position: absolute;
+  right: clamp(16px, 4vw, 56px);
+  bottom: clamp(16px, 3vh, 32px);
+  margin: 0;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--plate) 92%, transparent);
+  border: var(--bd-hair);
+  border-radius: var(--r-plate);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  opacity: 0.72;
+  transition: opacity var(--dur) var(--ease-settle);
+}
+.you[data-on] { opacity: 1; }
+.you b { color: var(--ink); font-weight: 500; }
+
+/* reduced motion: one still frame of the gap, no runway */
+.runway.still { height: auto; --note: 1; }
+.still .stage { position: relative; height: 100vh; }
+.still .keys,
+.still .controls,
+.still .you { display: none; }
+
+@media (max-width: 1100px) {
+  .runway { --proof: min(380px, 38vw); }
+  .margins { width: min(420px, 44vw); }
+  .margins li { grid-template-columns: 3.2em minmax(0, 1fr) 4.6em; }
+  .pc { display: none; }
+}
+
+@media (max-width: 760px) {
+  .runway { height: auto; --note: 1; }
+  .stage { position: relative; height: auto; overflow: visible; padding-bottom: 40px; }
+  .game { position: relative; inset: auto; height: 58svh; }
+  .copy,
+  .proof,
+  .margins,
+  .you { position: static; width: auto; max-width: none; margin: var(--s-5) 16px 0; }
+  .copy { margin-top: var(--s-6); }
+  .you { display: block; }
+  .keys { display: none; }
+}
