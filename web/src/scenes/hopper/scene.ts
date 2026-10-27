@@ -58,6 +58,8 @@ export interface HopperOptions {
   ghosts?: [Build, Build];
   /** the build the player starts on */
   build?: Build;
+  /** world units the dive frame looks higher, which moves the gap lower on screen to make room for copy above it */
+  diveShift?: number;
 }
 
 export interface HopperScene {
@@ -251,9 +253,12 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
     const fit = clamp(1.25 / (width / height), 1, 1.9); // narrow screens step back
     wantTarget.set(focusX + FOLLOW.ahead, FOLLOW.y, 0.5);
     wantPos.copy(wantTarget).addScaledVector(FOLLOW.offset, fit);
+    const shift = opts.diveShift ?? 0;
     const diveTarget = tmp.copy(DIVE.target);
+    diveTarget.y += shift;
     wantTarget.lerp(diveTarget, dive);
     const divePos = DIVE.position.clone().sub(DIVE.target).multiplyScalar(fit).add(DIVE.target);
+    divePos.y += shift;
     wantPos.lerp(divePos, dive);
     if (snap) {
       camPos.copy(wantPos);

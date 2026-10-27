@@ -255,7 +255,7 @@
   .threadSvg { display: none; }
   .right { margin-top: var(--s-6); }
   .code { margin-top: var(--s-4); }
-  .seal { top: -28px; right: 8px; width: 96px; height: 96px; }
+  .seal { top: -52px; right: 8px; width: 96px; height: 96px; }
   .rows { display: block; margin-top: var(--s-6); }
   .rows ol { margin: 0; padding: 0; list-style: none; border-top: var(--bd-hair); }
   .rows li {

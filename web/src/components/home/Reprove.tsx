@@ -23,6 +23,8 @@ interface ReproveProps {
   kept: { coyote: number; terminal: number };
 }
 
+// the gap sits lower in the frame than in the hero, under the heading
+const DIVE_SHIFT = 2.6;
 const n2 = (v: number) => v.toFixed(2);
 const signed = (v: number) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(3);
 const ROWS: { build: Build; name: string }[] = [
@@ -84,6 +86,7 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
         reduced: still,
         ghosts: ["head", "fixed"],
         build: "fixed",
+        diveShift: DIVE_SHIFT,
         labels: { base: t.head!, head: t.fixed!, you: t.you!, gap: t.gap!, baseMark: t.headMark!, headMark: t.fixedMark! },
         onHud,
       });
@@ -231,7 +234,7 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
           <span ref={bind("tries")}>0 tries · 0 cleared the gap</span>
         </p>
 
-        <div className={hero.pad} aria-hidden="true">
+        <div className={`${hero.pad} ${styles.pad}`} aria-hidden="true">
           <button type="button" tabIndex={-1} {...pad("x", -1, () => setPlaying(true))}>Left</button>
           <button type="button" tabIndex={-1} {...pad("z", -1, () => setPlaying(true))}>Back</button>
           <button type="button" tabIndex={-1} {...pad("z", 1, () => setPlaying(true))}>Front</button>
