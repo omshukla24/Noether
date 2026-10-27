@@ -293,16 +293,23 @@ class ContreeRunner:
 
         started = time.monotonic()
         try:
-            done = image.run(
-                shell=script,
-                files=files or None,
-                env=env or None,
-                timeout=self.run_timeout,
-                disposable=disposable,
-                truncate_output_at=MAX_SANDBOX_OUTPUT,
-            ).wait()
-        except ContreeError as exc:
-            raise RunnerError(f"sandbox call failed: {exc}") from exc
+            for attempt in range(2):
+                try:
+                    done = image.run(
+                        shell=script,
+                        files=files or None,
+                        env=env or None,
+                        timeout=self.run_timeout,
+                        disposable=disposable,
+                        truncate_output_at=MAX_SANDBOX_OUTPUT,
+                    ).wait()
+                    break
+                except ContreeError as exc:
+                    # One dropped connection to the sandbox API (seen live) is not a verdict-worthy failure; a
+                    # script that outlives run_timeout is a different error and is not retried.
+                    if attempt == 0 and "timeout_type='connect'" in str(exc):
+                        continue
+                    raise RunnerError(f"sandbox call failed: {exc}") from exc
         finally:
             self.seconds += time.monotonic() - started
         if not disposable and done.exit_code != 0:

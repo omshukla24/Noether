@@ -179,6 +179,11 @@ def test_seconds_add_up_and_close_removes_the_copies(runner, change):
 # ------------------------------------------------------------------ ContreeRunner (fake sandbox)
 
 
+class ConnectDropped(ContreeError):
+    def __str__(self):
+        return "ApiTimeoutError(request=RequestInfo(method='GET'), response=None, timeout_type='connect')"
+
+
 class FakeSandbox:
     """Stands in for ContreeSync: records every run and answers from a script."""
 
@@ -214,6 +219,8 @@ class FakeImage:
         sandbox.runs.append({"image": self.ref, **self.request})
         if exit_code == "timeout":
             raise ContreeError()
+        if exit_code == "connect":
+            raise ConnectDropped()
         return SimpleNamespace(uuid=f"uuid-{len(sandbox.runs)}", exit_code=exit_code, stdout=stdout, stderr=stderr)
 
 
@@ -335,6 +342,23 @@ def test_the_crash_log_a_sandbox_sends_back_reaches_the_result():
     result = ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("boom", "c", "f", "s", "//")])[0]
 
     assert not result.passed and "no export named nope" in result.output
+
+
+def test_one_dropped_connection_to_the_sandbox_api_is_retried_once():
+    sandbox = FakeSandbox([("connect", "", ""), (0, REAL_REPORT, "")])
+
+    results = ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("a_pass", "c", "f", "s", "//")])
+
+    assert results[0].passed and len(sandbox.runs) == 2 and not sandbox.answers  # the failed try, then the good one
+
+
+def test_a_run_timeout_is_not_retried():
+    sandbox = FakeSandbox([("timeout", "", ""), (0, REAL_REPORT, "")])
+
+    with pytest.raises(RunnerError, match="sandbox call failed"):
+        ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("a_pass", "c", "f", "s", "//")])
+
+    assert len(sandbox.answers) == 1  # the second answer was never asked for
 
 
 def test_run_tests_with_nothing_to_run_does_not_start_a_sandbox():
