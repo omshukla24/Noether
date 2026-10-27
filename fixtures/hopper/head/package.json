@@ -1,0 +1,7 @@
+{
+  "name": "hopper",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
