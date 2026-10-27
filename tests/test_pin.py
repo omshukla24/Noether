@@ -253,3 +253,9 @@ def test_probe_with_nothing_to_pin_makes_no_model_call(make_client):
 
     assert probe_invariants(client, change, []) == ([], [])
     assert client.sent == []
+
+
+def test_the_probe_prompt_asks_for_every_member_a_changed_class_gained_or_lost(change):
+    user = build_probe_messages(change, PINNED)[1]["content"]
+
+    assert "name each member it gained or lost" in user
