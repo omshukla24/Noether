@@ -1,4 +1,3 @@
-// Placeholder until this section is built (handoff/DESIGN.md section 4).
 export function Judge() {
   return (
     <section id="judge" data-route="judge" data-label="05 Judge" data-theme="light" style={{ minHeight: "60vh", padding: "96px 40px" }}>
