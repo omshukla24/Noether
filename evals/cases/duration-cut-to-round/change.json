@@ -1,0 +1,5 @@
+{
+  "repo": "local/duration-cut-to-round",
+  "title": "formatDuration: pull the seconds part into tenths()",
+  "body": "Small readability change: the seconds maths moves into its own helper, with a comment about float error. No behaviour change."
+}

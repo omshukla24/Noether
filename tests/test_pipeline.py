@@ -7,6 +7,7 @@ import pytest
 
 from noether import model as m
 from noether.ingest import from_local
+from noether.nemotron import ModelError
 from noether.pipeline import Caps, run_check
 from noether.runner import LocalRunner
 from tests.tiny_cart import (DISCOUNT, FIXTURE, LINE_TOTAL, SHIPPING, FakeClient, ScriptedRunner, make_stages)
@@ -376,6 +377,77 @@ def test_real_verdict_and_bundle_modules_agree_with_the_pipeline(tmp_path):
     assert run.verdict == "BROKEN"
     assert next(f for f in run.flips if f.invariant.name == DISCOUNT.name).fix.proved
     assert Path(run.timeline[-1].data["bundle"]).exists()
+
+
+def reading_again(inv):
+    return replace(inv, claim=inv.claim + " (read again)")
+
+
+def test_repair_goes_to_the_model_in_small_batches_and_a_failed_batch_is_on_the_record(tmp_path):
+    runner = ScriptedRunner(plan={"base": [{LINE_TOTAL.name: False, DISCOUNT.name: False, SHIPPING.name: False},
+                                           {}]})
+    batches = []
+
+    def repair(client, change, failures):
+        batches.append([inv.name for inv, _ in failures])
+        if SHIPPING.name in batches[-1]:
+            raise ModelError("repair: the reply was still not valid after one repair")
+        return [reading_again(inv) for inv, _ in failures], []
+
+    run, events, _ = run_scripted(runner, caps=Caps(repair_batch=2, repair_rounds=1),
+                                  stages=make_stages(repair_invariants=repair), tmp=tmp_path)
+
+    assert batches == [[LINE_TOTAL.name, DISCOUNT.name], [SHIPPING.name]]
+    asked = {tuple(e["asked"]): e for e in of(events, "base", "progress") if "asked" in e}
+    assert asked[(LINE_TOTAL.name, DISCOUNT.name)]["returned"] == [LINE_TOTAL.name, DISCOUNT.name]
+    assert "still not valid" in asked[(SHIPPING.name,)]["error"]
+    assert asked[(LINE_TOTAL.name, DISCOUNT.name)]["why"] == {LINE_TOTAL.name: "boom", DISCOUNT.name: "boom"}
+    assert of(events, "base", "done")[0]["repaired"] == sorted([LINE_TOTAL.name, DISCOUNT.name])
+    assert SHIPPING.name not in [i.name for i in run.invariants]  # the original stays red and is dropped
+
+
+def test_a_second_repair_round_takes_only_the_checks_still_red(tmp_path):
+    # round 1 fixes line_total only; round 2 is asked about discount alone and fixes it
+    runner = ScriptedRunner(plan={"base": [{LINE_TOTAL.name: False, DISCOUNT.name: False},
+                                           {DISCOUNT.name: False}, {}]})
+    batches = []
+
+    def repair(client, change, failures):
+        batches.append([inv.name for inv, _ in failures])
+        return [reading_again(inv) for inv, _ in failures if inv.name == LINE_TOTAL.name or len(batches) == 2], []
+
+    run, events, _ = run_scripted(runner, stages=make_stages(repair_invariants=repair), tmp=tmp_path)
+
+    assert batches == [[LINE_TOTAL.name, DISCOUNT.name], [DISCOUNT.name]]
+    assert of(events, "base", "done")[0]["repaired"] == sorted([LINE_TOTAL.name, DISCOUNT.name])
+    assert {LINE_TOTAL.name, DISCOUNT.name} <= {i.name for i in run.invariants}
+
+
+def test_repair_rounds_are_capped_and_a_check_that_stays_red_fails_closed(tmp_path):
+    runner = ScriptedRunner(plan={"base": [{DISCOUNT.name: False}]})  # red on every base run
+    rounds = []
+
+    def repair(client, change, failures):
+        rounds.append(1)
+        return [reading_again(inv) for inv, _ in failures], []
+
+    run, events, _ = run_scripted(runner, caps=Caps(repair_rounds=2), stages=make_stages(repair_invariants=repair),
+                                  tmp=tmp_path)
+
+    assert len(rounds) == 2
+    assert DISCOUNT.name not in [i.name for i in run.invariants]
+    assert any(d["name"] == DISCOUNT.name and d["reason"].startswith("red on base") for d in run.dropped)
+
+
+def test_an_empty_repair_reply_is_reported_instead_of_vanishing(tmp_path):
+    runner = ScriptedRunner(plan={"base": [{DISCOUNT.name: False}]})
+
+    run, events, _ = run_scripted(runner, caps=Caps(repair_rounds=1),
+                                  stages=make_stages(repair_invariants=lambda c, ch, f: ([], [])), tmp=tmp_path)
+
+    note = next(e for e in of(events, "base", "progress") if "asked" in e)
+    assert note["asked"] == [DISCOUNT.name] and note["missing"] == [DISCOUNT.name]
+    assert "no repaired checks" in note["error"]
 
 
 def test_a_check_red_on_base_gets_one_repair_and_is_pinned_when_it_then_holds(tmp_path):

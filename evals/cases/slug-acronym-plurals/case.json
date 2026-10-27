@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Modeled on sindresorhus/slugify#79 (https://github.com/sindresorhus/slugify/issues/79): the fix for plural acronyms narrowed a character class and stopped splitting APIUser. Original code, not slugify."
+}

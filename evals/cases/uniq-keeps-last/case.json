@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Original code, patterned on a common refactor slip: a Map built in one pass quietly keeps the last duplicate instead of the first. The repo suite only uses duplicates that are identical."
+}

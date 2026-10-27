@@ -1,0 +1,5 @@
+{
+  "repo": "local/slug-acronym-plurals",
+  "title": "slugify: keep acronym plurals together (APIs, URLs)",
+  "body": "`slugify('APIs')` gave `ap-is` and `slugify('URLs')` gave `ur-ls`; both now stay one word (`apis`, `urls`). Nothing else changes."
+}

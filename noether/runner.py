@@ -16,13 +16,15 @@ import tempfile
 import time
 from pathlib import Path, PurePosixPath
 
-from noether.junit import parse_counts, parse_junit, pinned_filename, tail
+from noether.junit import FILE_LOG_MARK, parse_counts, parse_junit, pinned_filename, tail
 from noether.model import Change, Invariant, Snapshot, SuiteResult, TestResult
 
 SKIP_DIRS = {"node_modules", ".git", ".noether"}
 NODE_IMAGE = "docker.io/library/node:24-slim"
 JUNIT_PATH = "/tmp/noether-junit.xml"
 LOG_PATH = "/tmp/noether-test.log"
+ONE_PATH = "/tmp/noether-one.log"
+MAX_FILE_LOG = 2000
 NO_SUITE_MARKER = "NOETHER_NO_TEST_SCRIPT"
 PER_TEST_TIMEOUT_MS = 20_000
 MAX_SANDBOX_OUTPUT = 2_000_000  # the junit report comes back on stdout
@@ -238,11 +240,16 @@ class ContreeRunner:
         uploads = {f"{snap.workdir}/.noether/pinned/{n}": code.encode("utf-8") for n, code in files.items()}
         targets = " ".join(shlex.quote(f".noether/pinned/{n}") for n in files)
         # The report goes to a file so anything the tests print cannot corrupt the XML.
+        # A file that dies before running a check (bad import, syntax error) is reported as a bare "test failed"
+        # and its stderr is dropped, so when anything is red the red files run once more alone to say why.
         script = (
             f"cd {shlex.quote(snap.workdir)}\n"
             f"node --test --test-timeout={PER_TEST_TIMEOUT_MS} --test-reporter=junit "
             f"--test-reporter-destination={JUNIT_PATH} {targets} > {LOG_PATH} 2>&1\n"
+            "rc=$?\n"
             f"cat {JUNIT_PATH} 2>/dev/null || tail -c 4000 {LOG_PATH}\n"
+            f'if [ "$rc" != 0 ]; then for f in {targets}; do node "$f" > {ONE_PATH} 2>&1 || '
+            f'{{ echo; echo "{FILE_LOG_MARK}$f"; head -c {MAX_FILE_LOG} {ONE_PATH}; }}; done; fi\n'
         )
         done = self._exec(self._image(snap), script, files=uploads, disposable=True)
         names = [t.name for t in tests]
@@ -286,16 +293,23 @@ class ContreeRunner:
 
         started = time.monotonic()
         try:
-            done = image.run(
-                shell=script,
-                files=files or None,
-                env=env or None,
-                timeout=self.run_timeout,
-                disposable=disposable,
-                truncate_output_at=MAX_SANDBOX_OUTPUT,
-            ).wait()
-        except ContreeError as exc:
-            raise RunnerError(f"sandbox call failed: {exc}") from exc
+            for attempt in range(2):
+                try:
+                    done = image.run(
+                        shell=script,
+                        files=files or None,
+                        env=env or None,
+                        timeout=self.run_timeout,
+                        disposable=disposable,
+                        truncate_output_at=MAX_SANDBOX_OUTPUT,
+                    ).wait()
+                    break
+                except ContreeError as exc:
+                    # One API call that times out (connect or read, both seen live) is not a verdict-worthy
+                    # failure; a script that outlives run_timeout is a different error and is not retried.
+                    if attempt == 0 and "ApiTimeoutError" in str(exc):
+                        continue
+                    raise RunnerError(f"sandbox call failed: {exc}") from exc
         finally:
             self.seconds += time.monotonic() - started
         if not disposable and done.exit_code != 0:

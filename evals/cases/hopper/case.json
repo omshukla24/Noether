@@ -1,0 +1,5 @@
+{
+  "expected": "BROKEN",
+  "note": "The flagship fixture: a refactor drops the grounded check around friction, so friction acts in mid-air. The repo suite and the pull request text both miss it.",
+  "fixture": "../../../fixtures/hopper"
+}

@@ -1,0 +1,5 @@
+{
+  "repo": "local/backoff-jitter-at-cap",
+  "title": "retryDelay: compute the delay in one expression",
+  "body": "The doubling, the cap and the jitter are now a single return statement. Same delays, nothing else touched."
+}

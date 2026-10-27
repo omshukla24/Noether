@@ -4,6 +4,7 @@
 __pycache__/
 .pytest_cache/
 /runs/
+/evals/results/*/
 node_modules/
 .next/
 .vercel/

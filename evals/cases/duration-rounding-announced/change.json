@@ -1,0 +1,5 @@
+{
+  "repo": "local/duration-rounding-announced",
+  "title": "formatDuration: round seconds to the nearest tenth instead of cutting",
+  "body": "Seconds were cut to one decimal, so 1999 ms read 1.9s. They are now rounded to the nearest tenth: 1999 ms reads 2s, and 59_999 ms reads 60s (it used to read 59.9s). Everything else is unchanged."
+}

@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Modeled on sindresorhus/camelcase#54 (https://github.com/sindresorhus/camelcase/issues/54): a fix for letters after numbers turned e2e into e2E. Original code, not camelcase. The text limits the rule to numbers of two or more digits, the regex does not."
+}

@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Original code, patterned on a common refactor slip: a shared validation helper arrives together with a dropped clamp, so a page past the end gets an inverted range. The repo suite never asks for one."
+}

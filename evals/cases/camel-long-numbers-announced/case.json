@@ -1,0 +1,4 @@
+{
+  "expected": "CONSERVED",
+  "note": "The same feature written exactly as announced (two or more digits only), so short numbers like e2e do not change."
+}

@@ -1,0 +1,5 @@
+{
+  "repo": "local/paginate-past-the-end",
+  "title": "paginate: share one integer check between the three arguments",
+  "body": "Pulls the three near-identical checks into assertInt(). Messages and results are unchanged."
+}

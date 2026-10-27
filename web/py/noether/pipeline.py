@@ -32,6 +32,8 @@ class Caps:
     max_sandbox_seconds: int = 600
     max_fixes: int = 3
     fix: bool = True
+    repair_rounds: int = 2  # a second round takes only the checks still red after the first
+    repair_batch: int = 4  # checks per repair call: a short answer is one the model can finish
 
 
 def _lazy(module: str, attr: str) -> Callable[..., Any]:
@@ -246,24 +248,45 @@ class _Check:
 
     def repair(self, snap: Snapshot, candidates: list[Invariant], first: dict[str, TestResult]
                ) -> tuple[list[Invariant], dict[str, TestResult], list[str]]:
-        """One round: checks red on the first base run go back to the model with their real failure output.
-        Characterization means recording what BASE does, so a check that misread BASE gets one chance to read it again."""
-        failures = [(inv, first[inv.name].output) for inv in candidates if not first[inv.name].passed]
-        if not failures or self.stages.repair_invariants is None:
-            return candidates, first, []
-        try:
-            fixed, dropped = self.stages.repair_invariants(self.client, self.run.change, failures)
-        except _model_errors() as exc:
-            if isinstance(exc, _nemotron_errors("TokenCapHit")):
-                raise
-            return candidates, first, []  # the originals stay and fail closed below
-        self.run.dropped.extend(dropped)
-        if not fixed:
-            return candidates, first, []
-        by_name = {f.name: f for f in fixed}
-        candidates = [by_name.get(inv.name, inv) for inv in candidates]
-        rerun = self.tests("base", snap, fixed, 1)
-        return candidates, {**first, **rerun}, sorted(by_name)
+        """Checks red on the first base run go back to the model with their real failure output, a few at a time,
+        and a second round takes only those still red. Characterization means recording what BASE does, so a check
+        that misread BASE gets another chance to read it. Whatever stays red fails closed below."""
+        repaired: set[str] = set()
+        for round_no in range(1, self.caps.repair_rounds + 1):
+            failures = [(inv, first[inv.name].output) for inv in candidates if not first[inv.name].passed]
+            if not failures or self.stages.repair_invariants is None:
+                break
+            fixed = self.repair_round(round_no, failures)
+            if fixed:
+                by_name = {f.name: f for f in fixed}
+                candidates = [by_name.get(inv.name, inv) for inv in candidates]
+                first = {**first, **self.tests("base", snap, fixed, 1)}
+                repaired |= set(by_name)
+        return candidates, first, sorted(repaired)
+
+    def repair_round(self, round_no: int, failures: list[tuple[Invariant, str]]) -> list[Invariant]:
+        fixed: list[Invariant] = []
+        size = max(1, self.caps.repair_batch)
+        for start in range(0, len(failures), size):
+            batch = failures[start : start + size]
+            asked = [inv.name for inv, _ in batch]
+            self.guard()
+            try:
+                got, dropped = self.stages.repair_invariants(self.client, self.run.change, batch)
+            except _model_errors() as exc:
+                if isinstance(exc, _nemotron_errors("TokenCapHit")):
+                    raise
+                # the originals stay and fail closed below, but the reason is on the record
+                self.event("base", "progress", repair=round_no, asked=asked, error=str(exc))
+                continue
+            self.run.dropped.extend(d for d in dropped if d not in self.run.dropped)
+            answered = {f.name for f in got} | {d["name"] for d in dropped}
+            extra = {"error": "the model returned no repaired checks"} if not got and not dropped else {}
+            self.event("base", "progress", repair=round_no, asked=asked, returned=[f.name for f in got],
+                       rejected=[d["name"] for d in dropped], missing=[n for n in asked if n not in answered],
+                       why={inv.name: " ".join(out.split())[:160] for inv, out in batch}, **extra)
+            fixed += got
+        return fixed
 
     def do_head(self) -> None:
         self.begin("head")

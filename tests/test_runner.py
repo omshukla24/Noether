@@ -179,6 +179,11 @@ def test_seconds_add_up_and_close_removes_the_copies(runner, change):
 # ------------------------------------------------------------------ ContreeRunner (fake sandbox)
 
 
+class ConnectDropped(ContreeError):
+    def __str__(self):
+        return "ApiTimeoutError(request=RequestInfo(method='GET'), response=None, timeout_type='connect')"
+
+
 class FakeSandbox:
     """Stands in for ContreeSync: records every run and answers from a script."""
 
@@ -214,6 +219,8 @@ class FakeImage:
         sandbox.runs.append({"image": self.ref, **self.request})
         if exit_code == "timeout":
             raise ContreeError()
+        if exit_code == "connect":
+            raise ConnectDropped()
         return SimpleNamespace(uuid=f"uuid-{len(sandbox.runs)}", exit_code=exit_code, stdout=stdout, stderr=stderr)
 
 
@@ -311,6 +318,47 @@ def test_fake_sandbox_run_tests_uploads_files_and_parses_the_report():
     assert run["files"] == {f"/w/repo/.noether/pinned/{n.name}.test.mjs": f"// {n.name}".encode() for n in tests}
     assert "--test-reporter=junit" in run["shell"] and ".noether/pinned/b_fail.test.mjs" in run["shell"]
     assert passed(results) == {"a_pass": True, "b_fail": False, "e_missing": False}
+
+
+def test_red_files_run_again_alone_so_a_crash_is_not_just_test_failed():
+    sandbox = FakeSandbox([(0, REAL_REPORT, "")])
+    tests = [m.Invariant("a_pass", "c", "f", "s", "// a")]
+
+    ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), tests)
+
+    shell = sandbox.runs[0]["shell"]
+    assert 'if [ "$rc" != 0 ]' in shell and "@@NOETHER-LOG" in shell and 'node "$f"' in shell
+
+
+def test_the_crash_log_a_sandbox_sends_back_reaches_the_result():
+    report = (
+        '<?xml version="1.0"?><testsuites><testcase name="x" file="/w/repo/.noether/pinned/boom.test.mjs">'
+        '<failure message="test failed">[Error: test failed] { cause: \'test failed\', exitCode: 1, signal: null }'
+        "</failure></testcase></testsuites>\n\n@@NOETHER-LOG .noether/pinned/boom.test.mjs\n"
+        "SyntaxError: no export named nope\n"
+    )
+    sandbox = FakeSandbox([(0, report, "")])
+
+    result = ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("boom", "c", "f", "s", "//")])[0]
+
+    assert not result.passed and "no export named nope" in result.output
+
+
+def test_one_dropped_connection_to_the_sandbox_api_is_retried_once():
+    sandbox = FakeSandbox([("connect", "", ""), (0, REAL_REPORT, "")])
+
+    results = ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("a_pass", "c", "f", "s", "//")])
+
+    assert results[0].passed and len(sandbox.runs) == 2 and not sandbox.answers  # the failed try, then the good one
+
+
+def test_a_run_timeout_is_not_retried():
+    sandbox = FakeSandbox([("timeout", "", ""), (0, REAL_REPORT, "")])
+
+    with pytest.raises(RunnerError, match="sandbox call failed"):
+        ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("a_pass", "c", "f", "s", "//")])
+
+    assert len(sandbox.answers) == 1  # the second answer was never asked for
 
 
 def test_run_tests_with_nothing_to_run_does_not_start_a_sandbox():
