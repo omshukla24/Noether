@@ -81,8 +81,10 @@ class TestResult:
 
 @dataclass
 class SuiteResult:
-    """The repo's own test suite. `ran` is False when the repo has none."""
+    """The repo's own test suite. `ran` is False when the repo has none.
+    `exit_code` decides pass/fail; the counts are best effort from the output."""
     ran: bool
+    exit_code: int = 0
     passed: int = 0
     failed: int = 0
     output: str = ""
@@ -98,7 +100,9 @@ class Location:
 
 @dataclass
 class Fix:
-    diff: str
+    file: str
+    new_source: str
+    diff: str  # unified diff against head, for display only
     proved: bool
     evidence: dict[str, Any] = field(default_factory=dict)
 
@@ -156,8 +160,9 @@ class Runner(Protocol):
     def checkout_head(self, base: Snapshot, change: Change) -> Snapshot:
         """Branch from the base checkpoint and move the working tree to HEAD."""
 
-    def apply_patch(self, snap: Snapshot, diff: str) -> Snapshot:
-        """Branch from `snap` with a unified diff applied."""
+    def apply_files(self, snap: Snapshot, files: dict[str, str]) -> Snapshot:
+        """Branch from `snap` with whole files replaced (repo-relative path -> text).
+        Whole files, not a diff: the sandbox image has neither git nor patch."""
 
     def run_tests(self, snap: Snapshot, tests: list[Invariant]) -> list[TestResult]:
         """Write each invariant to `.noether/pinned/<name>.test.mjs` and run them."""
