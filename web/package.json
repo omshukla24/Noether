@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sync:hopper": "node scripts/sync-hopper.mjs"
   },
   "dependencies": {
     "gsap": "3.15.0",
