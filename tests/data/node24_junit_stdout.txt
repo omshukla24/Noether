@@ -1,0 +1,91 @@
+noise before the report
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="line total" time="0.000785" classname="test" file="C:\work\repo\.noether\pinned\a_pass.test.mjs"/>
+	<testcase name="discount rounds half up" time="0.000524" classname="test" file="C:\work\repo\.noether\pinned\b_fail.test.mjs" failure="Expected values to be strictly equal:&#10;&#10;3 !== 2.99&#10;">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:&#10;&#10;3 !== 2.99">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+3 !== 2.99
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 2.99
+  
+      at TestContext.&lt;anonymous> (file:///C:/work/repo/.noether/pinned/b_fail.test.mjs:4:48)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2.99,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name=".noether\pinned\c_import_error.test.mjs" time="0.000066" classname="test" file="C:\work\repo\.noether\pinned\c_import_error.test.mjs" failure="The requested module '../../src/cart.js' does not provide an export named 'doesNotExist'">
+		<failure type="undefined" message="The requested module '../../src/cart.js' does not provide an export named 'doesNotExist'">
+file:///C:/work/repo/.noether/pinned/c_import_error.test.mjs:3
+import { doesNotExist } from '../../src/cart.js';
+         ^^^^^^^^^^^^
+SyntaxError: The requested module '../../src/cart.js' does not provide an export named 'doesNotExist'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:319:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:422:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:661:26)
+    at async node:internal/test_runner/runner:863:15
+    at async runFiles (node:internal/test_runner/runner:829:9)
+    at async runChain (node:internal/test_runner/runner:907:5)
+		</failure>
+	</testcase>
+	<testsuite name="shipping" time="0.000377" disabled="0" errors="0" tests="2" failures="1" skipped="0" hostname="host">
+		<testcase name="small order pays" time="0.000088" classname="test" file="C:\work\repo\.noether\pinned\d_multi.test.mjs"/>
+		<testcase name="big order is free" time="0.000132" classname="test" file="C:\work\repo\.noether\pinned\d_multi.test.mjs" failure="Expected values to be strictly equal:&#10;&#10;0 !== 7&#10;">
+			<failure type="testCodeFailure" message="Expected values to be strictly equal:&#10;&#10;0 !== 7">
+Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+0 !== 7
+
+    at async Promise.all (index 0) {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 7
+  
+      at TestContext.&lt;anonymous> (file:///C:/work/repo/.noether/pinned/d_multi.test.mjs:6:44)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1533:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 7,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+			</failure>
+		</testcase>
+	</testsuite>
+	<!-- tests 5 -->
+	<!-- suites 1 -->
+	<!-- pass 2 -->
+	<!-- fail 3 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 22.9537 -->
+</testsuites>

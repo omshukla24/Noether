@@ -1,0 +1,5 @@
+{
+  "repo": "local/tiny-cart",
+  "title": "Raise the free-shipping threshold to 75",
+  "body": "Orders now qualify for free shipping from 75 instead of 50. Nothing else about pricing changes: line totals, subtotals, discounts and rounding stay as they were."
+}
