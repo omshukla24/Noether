@@ -17,7 +17,7 @@ export const LENIS = { duration: 1.15, wheelMultiplier: 0.92, touchMultiplier: 1
 
 export const REVEAL = { yPercent: 118, duration: 1.05, stagger: 0.035, start: 'top 88%', blur: 14 };
 
-// Runways in viewport heights, matching the scene script.
+// Runways in viewport heights, one per scroll-driven section.
 export const RUNWAY = { gap: 3.0, slit: 0.6, darkroom: 2.0, collapse: 2.4, reprove: 1.2 };
 
 export const HOPPER_VIEW = {
