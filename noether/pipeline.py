@@ -10,6 +10,7 @@ Model-side modules are imported lazily so this file can be tested with fakes.
 from __future__ import annotations
 
 import hashlib
+import json
 import importlib
 import os
 import time
@@ -320,5 +321,6 @@ class _Check:
         if not self.aborted:
             run.verdict, run.reason = self.stages.decide(run)
         path = Path(self.stages.write_bundle(run, root=self.out_dir))
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        # the seal the bundle carries; a bundle without one gets the file hash
+        digest = json.loads(path.read_text(encoding="utf-8")).get("sha256") or hashlib.sha256(path.read_bytes()).hexdigest()
         self.event("seal", "done", verdict=run.verdict, reason=run.reason, sha256=digest, bundle=str(path))

@@ -33,6 +33,21 @@ def cost_estimate(calls: list[ModelCall]) -> float:
     return round(total, 6)
 
 
+def _js_numbers(value):
+    """Keep every float in the range where Python's repr and JavaScript's toString agree,
+    so the browser can re-hash a bundle and get the same digest."""
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, float):
+        x = round(value, 4)
+        return int(x) if x.is_integer() else x
+    if isinstance(value, dict):
+        return {k: _js_numbers(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_js_numbers(v) for v in value]
+    return value
+
+
 def _canonical(bundle: dict) -> bytes:
     return json.dumps(bundle, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
@@ -131,7 +146,7 @@ def to_bundle(run: Run) -> dict:
         "timeline": [{"t_ms": e.t_ms, "stage": e.stage, "type": e.type,
                       "data": json.loads(json.dumps(e.data, default=str))} for e in run.timeline],
     }
-    bundle = _redact(bundle)
+    bundle = _js_numbers(_redact(bundle))
     bundle["sha256"] = _digest(bundle)
     return bundle
 
