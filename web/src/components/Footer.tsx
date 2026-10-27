@@ -34,6 +34,7 @@ export function Footer() {
         <nav aria-label="Footer" className={styles.links}>
           <Link href="/check">Check a PR</Link>
           <Link href="/evals">Benchmark</Link>
+          <Link href="/action">GitHub Action</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <a href={REPO_URL} rel="noopener">Source</a>
