@@ -68,6 +68,7 @@ Rules:
 - Pin BEHAVIOUR, not configuration. Every test must call the code and observe what it does. Never write a test that only reads a constant or an exported value and compares it to a literal: that checks a number, not a behaviour, and such tests are rejected.
 - Aim at what the changed lines influence, including through the related modules shown (callers, data, recorded inputs). A change is often only visible after many calls: drive the public API over several steps or inputs and assert on the outcome.
 - Prefer properties the BASE code guarantees over exact numbers you cannot compute by hand: conserved quantities (a value that stays the same across steps), bounds, monotonic trends, round trips, symmetry, idempotence, and the outcomes of any recorded inputs, examples or fixtures the repo ships (for example, a recorded run that finishes). Use exact values only when you can derive them from the BASE source with certainty.
+- Cover every range listed under "BASE lines this pull request rewrites". For each range, find what the code there decides (a branch, a guard, a default, an ordering, a clamp) and drive BOTH sides of that decision: the input where a guard holds and the input where it does not. A rewrite that drops or flips a guard is the change a repo's own tests miss, and only a check that reaches the other side of the guard sees it.
 - Mix: at least half of the tests must exercise behaviour across several calls or steps; the rest may be single-call checks of changed functions.
 - One behavioural claim per test, one to three asserts, small inputs, no snapshots of large outputs.
 - Each test is its own ESM file run by node:test. Start it with exactly:
@@ -123,9 +124,9 @@ def _calls_imported_code(code: str) -> bool:
     return any(re.search(rf"(?<![\w$.]){re.escape(n)}(?:\.[\w$]+)+\s*\(", code) for n in namespaces)
 
 
-def build_pin_messages(change: Change, max_items: int = 12) -> list[dict]:
+def build_pin_messages(change: Change, max_items: int | None = 12) -> list[dict]:
     parts = [f"Pull request title (context only, do not test what it announces; describe BASE): {change.title or '(none)'}",
-             f"Write at most {max_items} tests.", "", "Changed files with their BASE source:"]
+             *([f"Write at most {max_items} tests."] if max_items else []), "", "Changed files with their BASE source:"]
     room = MAX_PROMPT_CHARS
     for f in js_sources(change, "base"):
         source = clip(f.base_source, min(MAX_SOURCE_CHARS, max(room, 0)))
@@ -272,19 +273,21 @@ def pin_invariants(client: Client, change: Change, max_items: int = 12) -> tuple
     return kept, dropped
 
 
+# Do not offer a way out ("leave a check out") or a cap ("at most N tests") here: given either, Super answered
+# {"invariants": []} to every repair on Hopper (8 tokens), and every red check was dropped unread.
 REPAIR_NOTE = """These checks ran against the BASE code in a sandbox and failed. A characterization check must pass on BASE, so each failure means the check is wrong, not the code.
-For each one, return a corrected version with the SAME name: fix imports, how state or inputs are built, or the expected value and the claim, using the failure output to see what BASE really does.
-If the failure shows a value, you may adopt it as the expected value when it is a stable result of BASE (not time or randomness). Leave a check out if it cannot be fixed.
-Return only {"invariants": [...]}."""
+Return a corrected version of EVERY check below, each with the SAME name. Read the failure output to see what BASE really does, then fix imports, how state or inputs are built, the expected value, or the claim.
+When the output shows the value BASE produced and it is a stable result of BASE (not time or randomness), the expected value may adopt it. Keep the check aimed at the behaviour its name describes, and rewrite the claim so it is true of what the assertion now checks.
+Return only {"invariants": [...]} with exactly one entry per check below."""
 
 
 def repair_invariants(client: Client, change: Change, failures: list[tuple[Invariant, str]],
                       max_output: int = 1500) -> tuple[list[Invariant], list[dict]]:
-    """One repair round for checks that were red on BASE. Returns (fixed, dropped); fixed keep their names."""
+    """One repair call for checks that were red on BASE. Returns (fixed, dropped); fixed keep their names."""
     if not failures:
         return [], []
     wanted = {inv.name for inv, _ in failures}
-    messages = build_pin_messages(change, len(failures))
+    messages = build_pin_messages(change, None)
     lines = [REPAIR_NOTE, ""]
     for inv, output in failures:
         lines += [f"### {inv.name}", f"claim: {inv.claim}", f"target_file: {inv.target_file}",

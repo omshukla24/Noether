@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from noether.model import Change, ChangedFile
+from noether.model import Change, ChangedFile, Invariant
 from noether.prompt_util import file_diff
 from noether.pin import (FORBIDDEN, INVARIANT_SCHEMA, build_pin_messages, exports_of, pin_invariants,
-                         validate_invariant)
+                         repair_invariants, validate_invariant)
 
 GOOD_CODE = """import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -164,6 +164,44 @@ def test_a_check_that_only_reads_a_constant_is_rejected(change):
     item = {"name": "gravity-value", "claim": "gravity is 30", "target_file": "src/physics.js",
             "target_symbol": "clamp", "test_code": code}
     assert validate_invariant(item, change) == "only reads a value; a check must call the code"
+
+
+def test_the_pin_prompt_asks_for_both_sides_of_every_rewritten_range(change):
+    system = build_pin_messages(change)[0]["content"]
+
+    assert "Cover every range" in system and "BOTH sides" in system
+
+
+def red(name="clamp-upper-bound", output="8 !== 0"):
+    return Invariant(name, "c", "src/physics.js", "clamp", GOOD_CODE), output
+
+
+def test_repair_asks_for_every_check_back_and_gives_no_way_out_or_cap(make_client, change):
+    client = reply(make_client, item(claim="fixed"))
+
+    fixed, dropped = repair_invariants(client, change, [red()])
+
+    user = client.sent[0]["messages"][1]["content"]
+    assert [f.name for f in fixed] == ["clamp-upper-bound"] and fixed[0].claim == "fixed" and dropped == []
+    # Super answered {"invariants": []} when it was allowed to leave checks out or capped at N tests
+    assert "Leave a check out" not in user and "at most" not in user
+    assert "EVERY check" in user and "8 !== 0" in user
+
+
+def test_repair_ignores_names_it_was_not_asked_about_and_reports_a_rejected_fix(make_client, change):
+    client = reply(make_client, item(name="somebody-else"), item(test_code=GOOD_CODE + "fetch('x');"))
+
+    fixed, dropped = repair_invariants(client, change, [red()])
+
+    assert fixed == []
+    assert dropped == [{"name": "clamp-upper-bound", "reason": "repair rejected: forbidden API: fetch"}]
+
+
+def test_repair_with_nothing_red_makes_no_model_call(make_client, change):
+    client = make_client()
+
+    assert repair_invariants(client, change, []) == ([], [])
+    assert client.sent == []
 
 
 def test_a_check_may_import_a_related_file(change):
