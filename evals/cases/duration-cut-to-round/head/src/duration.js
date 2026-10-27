@@ -1,11 +1,12 @@
-// Formats a duration in milliseconds as "1h 2m 3.4s". Seconds keep one decimal.
+// Formats a duration in milliseconds as "1h 2m 3.4s". Seconds keep one decimal and are cut, never rounded up,
+// so a duration just under a minute never reads as a whole one.
 const UNITS = [
   ["d", 86_400_000],
   ["h", 3_600_000],
   ["m", 60_000],
 ];
 
-// summed timers carry float error, so seconds are rounded to the nearest tenth
+// the seconds maths, split out so it can be read on its own
 function tenths(rest) {
   return Math.round(rest / 100) / 10;
 }
