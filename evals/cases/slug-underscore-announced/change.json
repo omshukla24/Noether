@@ -1,0 +1,5 @@
+{
+  "repo": "local/slug-underscore-announced",
+  "title": "slugify: join words with underscores instead of hyphens",
+  "body": "Slugs now use `_` between words (`hello_world`, `foo_bar`, `html_parser`). Accent stripping, trimming and case splitting work as before."
+}

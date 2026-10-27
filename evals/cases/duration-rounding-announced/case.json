@@ -1,0 +1,4 @@
+{
+  "expected": "CONSERVED",
+  "note": "Same code change as duration-cut-to-round, but the pull request says exactly what changes (cut to rounded), so every flip is announced."
+}

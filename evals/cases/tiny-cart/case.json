@@ -1,0 +1,5 @@
+{
+  "expected": "BROKEN",
+  "note": "A free-shipping threshold change is announced; the same diff silently changes discount rounding from round to floor.",
+  "fixture": "../../../fixtures/tiny-cart"
+}

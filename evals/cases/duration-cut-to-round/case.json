@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Modeled on sindresorhus/pretty-ms#76 (https://github.com/sindresorhus/pretty-ms/issues/76), where a value just under a unit boundary rounded up across it. Original code, not pretty-ms. The refactor swaps cutting for rounding; the repo suite only uses exact tenths."
+}

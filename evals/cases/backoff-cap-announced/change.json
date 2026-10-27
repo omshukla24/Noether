@@ -1,0 +1,5 @@
+{
+  "repo": "local/backoff-cap-announced",
+  "title": "retryDelay: lower the default cap from 30s to 10s",
+  "body": "Waiting 30 s between retries was too long for our API clients. The default cap is now 10_000 ms; passing `max` still overrides it. Delays below the cap are unchanged."
+}

@@ -1,0 +1,5 @@
+{
+  "repo": "local/uniq-keeps-last",
+  "title": "uniqBy: build the result in one pass",
+  "body": "One loop and one Map instead of a Set plus an array. Same output, no behaviour change."
+}

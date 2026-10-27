@@ -1,0 +1,9 @@
+{
+  "name": "paginate-past-the-end",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

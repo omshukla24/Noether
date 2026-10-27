@@ -1,0 +1,4 @@
+{
+  "expected": "BROKEN",
+  "note": "Original code, patterned on a common refactor slip: folding two steps into one expression moves the cap in front of jitter, so late retries no longer get jitter. The repo suite only uses jitter on early attempts."
+}

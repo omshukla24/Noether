@@ -1,0 +1,5 @@
+{
+  "repo": "local/camel-long-numbers-announced",
+  "title": "camelCase: a number of two or more digits ends a word",
+  "body": "`foo123bar` becomes `foo123Bar` and `aa11aa` becomes `aa11Aa`. Short numbers inside a word, like `v2` or `e2e`, are left alone."
+}

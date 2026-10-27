@@ -1,0 +1,4 @@
+{
+  "expected": "CONSERVED",
+  "note": "The default cap drops from 30 s to 10 s and the pull request says so; delays under the cap do not change."
+}

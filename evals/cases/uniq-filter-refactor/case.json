@@ -1,0 +1,4 @@
+{
+  "expected": "CONSERVED",
+  "note": "A pure refactor that really keeps behaviour (first duplicate wins); any alarm here is a false alarm."
+}

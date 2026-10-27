@@ -1,0 +1,4 @@
+{
+  "expected": "CONSERVED",
+  "note": "Every slug changes from hyphens to underscores and the pull request says so; the judge must call each flip intended."
+}

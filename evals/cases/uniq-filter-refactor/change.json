@@ -1,0 +1,5 @@
+{
+  "repo": "local/uniq-filter-refactor",
+  "title": "uniqBy: use filter instead of a manual loop",
+  "body": "Same Set, written with Array.prototype.filter. Output is identical, including which duplicate is kept (the first). No behaviour change."
+}
