@@ -69,6 +69,8 @@ export interface HopperScene {
   /** 0 = following the run, 1 = frozen on the gap */
   setDive: (t: number) => void;
   replay: () => void;
+  /** hold the world clock (ghosts, ferry, player) where it is; the camera still settles */
+  setPaused: (on: boolean) => void;
   setActive: (on: boolean) => void;
   dispose: () => void;
 }
@@ -150,6 +152,7 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   let build: Build = opts.build ?? "head";
   let input: Input = IDLE;
   let playing = false;
+  let paused = false;
   let dive = 0;
   let active = false;
   let state: State = GAMES[build].createState(LEVEL);
@@ -347,7 +350,7 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   function tick(_time: number, deltaMs: number) {
     const dt = Math.min(deltaMs / 1000, 0.1);
     watchFrames(deltaMs);
-    if (dive <= 0.02) {
+    if (dive <= 0.02 && !paused) {
       acc += dt;
       while (acc >= DT) {
         acc -= DT;
@@ -402,6 +405,9 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
       touched = false;
       resetPlayer();
       draw(0);
+    },
+    setPaused(on) {
+      paused = on;
     },
     setActive(on) {
       if (on === active || reduced) return;

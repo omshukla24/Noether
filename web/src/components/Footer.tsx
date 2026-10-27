@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { REPO_URL } from "@/lib/site";
 import styles from "./Footer.module.css";
-
-const REPO_URL = "https://github.com/omshukla24/Noether";
 
 function istNow(): string {
   return new Intl.DateTimeFormat("en-GB", {
@@ -34,6 +33,7 @@ export function Footer() {
         </span>
         <nav aria-label="Footer" className={styles.links}>
           <Link href="/check">Check a PR</Link>
+          <Link href="/evals">Benchmark</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <a href={REPO_URL} rel="noopener">Source</a>

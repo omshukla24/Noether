@@ -40,6 +40,18 @@ const EXAMPLE = [join(WEB, "..", "examples", "noether.yml"), join(WEB, "src", "c
   }
 }
 
+// The benchmark page shows the newest eval round, copied in for the same reason.
+{
+  const results = join(WEB, "..", "evals", "results");
+  const latest = readdirSync(results).filter((n) => /^\d{8}-\d{6}\.json$/.test(n)).sort().at(-1);
+  const target = join(WEB, "src", "content", "evals.json");
+  const want = readFileSync(join(results, latest));
+  if (!existsSync(target) || !readFileSync(target).equals(want)) {
+    stale.push(`evals/results/${latest}`);
+    if (!CHECK) writeFileSync(target, want);
+  }
+}
+
 if (existsSync(OUT)) {
   for (const name of readdirSync(OUT).filter((n) => n.endsWith(".py") && !sources.includes(n))) {
     stale.push(name);

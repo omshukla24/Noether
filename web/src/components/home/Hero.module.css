@@ -88,7 +88,18 @@
   overflow: hidden;
   padding-bottom: 0.06em;
 }
-.lineMask > span { display: inline-block; }
+/* the headline rises out of its mask by transform alone: it needs no script and never hides the text behind it */
+.lineMask > span {
+  display: inline-block;
+  animation: rise 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lineMask:nth-child(2) > span { animation-delay: 0.12s; }
+@keyframes rise {
+  from { transform: translateY(110%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lineMask > span { animation: none; }
+}
 .lead {
   margin: var(--s-5) 0 0;
   max-width: 46ch;
@@ -279,6 +290,7 @@
 .still { height: auto; }
 .still .stage { position: relative; height: 100vh; }
 .still .copy { opacity: 1; transform: none; filter: none; }
+.still .lineMask > span { animation: none; }
 .still .note { opacity: 1; transform: none; top: auto; bottom: 200px; }
 .still .you,
 .still .pad,

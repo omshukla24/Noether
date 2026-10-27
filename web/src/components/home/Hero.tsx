@@ -6,7 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GAP, formatChange, ghostRun, type Build, type Input } from "@/hopper/sim";
 import { prefersReducedMotion } from "@/motion/env.js";
 import { smoothstep } from "@/motion/math.js";
-import { playHeroIntro } from "@/motion/reveal.js";
 import { loadHopper } from "@/scenes/load";
 import { readPalette } from "@/scenes/palette";
 import type { HopperScene, Hud } from "@/scenes/hopper/scene";
@@ -46,6 +45,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
   const tags = useRef<Record<string, HTMLElement | null>>({});
   const [build, setBuild] = useState<Build>("head");
   const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -125,12 +125,8 @@ export function Hero({ ownSuitePassed }: HeroProps) {
       });
     });
 
-    const intro = () => playHeroIntro(root);
-    window.addEventListener("noether:ready", intro, { once: true });
-
     return () => {
       disposed = true;
-      window.removeEventListener("noether:ready", intro);
       window.clearTimeout(toastTimer.id);
       trigger?.kill();
       io?.disconnect();
@@ -142,6 +138,10 @@ export function Hero({ ownSuitePassed }: HeroProps) {
   useEffect(() => {
     sceneRef.current?.setBuild(build);
   }, [build]);
+
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
 
   // keyboard only while the level has focus, so Space still scrolls the page elsewhere
   useEffect(() => {
@@ -173,6 +173,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
       push();
     };
     const onFocus = () => {
+      setPaused(false);
       setPlaying(true);
       sceneRef.current?.setPlaying(true);
     };
@@ -198,6 +199,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
   const touch = (axis: keyof Input, v: number) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.preventDefault();
+      setPaused(false);
       sceneRef.current?.setPlaying(true);
       setPlaying(true);
       touchInput.current = { ...touchInput.current, [axis]: axis === "jump" ? true : v };
@@ -247,16 +249,16 @@ export function Hero({ ownSuitePassed }: HeroProps) {
         </div>
 
         <div className={styles.copy} data-hero>
-          <p className="label" data-hero-cast>01 · Observe · Hopper, a 3D platformer</p>
+          <p className="label">01 · Observe · Hopper, a 3D platformer</p>
           <h1 className={styles.title}>
             <span className={styles.lineMask}><span data-line>CI is green.</span></span>
             <span className={styles.lineMask}><span data-line>The jump is <em>broken.</em></span></span>
           </h1>
-          <p className={styles.lead} data-hero-cast>
+          <p className={styles.lead}>
             A refactor pull request. Its own {ownSuitePassed} tests pass before and after. The same recorded run clears the
             last gap on base and comes down {Math.abs(jh.margin).toFixed(2)} units short on head. Play both.
           </p>
-          <div className={styles.controls} data-hero-cast>
+          <div className={styles.controls}>
             <button type="button" className={styles.play} onClick={() => game.current?.focus()}>
               {playing ? "Playing: Escape to stop" : `Play the ${BUILD_NAME[build].toLowerCase()} build`}
             </button>
@@ -274,11 +276,21 @@ export function Hero({ ownSuitePassed }: HeroProps) {
                 </button>
               ))}
             </div>
-            <button type="button" className={styles.ghostBtn} onClick={() => sceneRef.current?.replay()}>
+            <button
+              type="button"
+              className={styles.ghostBtn}
+              onClick={() => {
+                setPaused(false);
+                sceneRef.current?.replay();
+              }}
+            >
               Replay the run
             </button>
+            <button type="button" className={styles.ghostBtn} onClick={() => setPaused((p) => !p)}>
+              {paused ? "Resume" : "Pause"}
+            </button>
           </div>
-          <p className={styles.keys} data-hero-cast aria-hidden="true">
+          <p className={styles.keys} aria-hidden="true">
             <kbd>A</kbd><kbd>D</kbd> run · <kbd>W</kbd><kbd>S</kbd> depth · <kbd>Space</kbd> jump
           </p>
         </div>
