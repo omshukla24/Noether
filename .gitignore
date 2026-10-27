@@ -7,3 +7,5 @@ runs/
 node_modules/
 .next/
 .vercel/
+build/
+*.egg-info/
