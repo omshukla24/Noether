@@ -7,6 +7,7 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LEVEL } from "@/hopper/sim";
+import { porcelain } from "./porcelain";
 
 export interface Palette {
   ground: string;
@@ -163,8 +164,13 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
   sun.shadow.radius = 4;
   scene.add(sun, sun.target);
 
-  const plateMat = keep(new THREE.MeshStandardMaterial({ color: p.plate, roughness: 0.62, metalness: 0 }));
-  const ferryMat = keep(new THREE.MeshStandardMaterial({ color: p.plate, roughness: 0.5, metalness: 0 }));
+  // every porcelain surface (platforms, wall, floor plate) is one custom material, see porcelain.ts
+  const porcelainMats: THREE.Material[] = [];
+  const glaze = (opts: Parameters<typeof porcelain>[1]) => {
+    const m = keep(porcelain(p, opts));
+    porcelainMats.push(m);
+    return m;
+  };
 
   // platforms: the real collision boxes on top, a pillar under each down to the floor plate
   let ferry = new THREE.Group();
@@ -176,7 +182,9 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
     const bottom = isFerry ? plat.min[1] : FLOOR_Y;
     const sy = top - bottom;
     const geo = keep(new THREE.BoxGeometry(sx, sy, sz));
-    const mesh = new THREE.Mesh(geo, isFerry ? ferryMat : plateMat);
+    const center = new THREE.Vector3((plat.min[0] + plat.max[0]) / 2, bottom + sy / 2, (plat.min[2] + plat.max[2]) / 2);
+    // the ferry's ink rides along with it; the fixed plates are inked in world units
+    const mesh = new THREE.Mesh(geo, glaze({ roughness: isFerry ? 0.5 : 0.62, box: [sx / 2, sy / 2, sz / 2], ride: isFerry ? center.clone() : undefined }));
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     const group = new THREE.Group();
@@ -188,7 +196,7 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
     );
     lip.position.set(0, sy / 2 + 0.011, sz / 2 - 0.25);
     group.add(lip);
-    group.position.set((plat.min[0] + plat.max[0]) / 2, bottom + sy / 2, (plat.min[2] + plat.max[2]) / 2);
+    group.position.copy(center);
     scene.add(group);
     if (isFerry) ferry = group;
   }
@@ -200,7 +208,7 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
   wallTex.repeat.set(wallW / 5, wallH / 5);
   const wall = new THREE.Mesh(
     keep(new THREE.PlaneGeometry(wallW, wallH)),
-    keep(new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.95 })),
+    glaze({ map: wallTex, roughness: 0.95 }),
   );
   wall.position.set((SPAN.from + SPAN.to) / 2, FLOOR_Y + wallH / 2, WALL_Z);
   wall.receiveShadow = true;
@@ -219,7 +227,7 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
   floorTex.repeat.set(wallW / 5, 24 / 5);
   const floor = new THREE.Mesh(
     keep(new THREE.PlaneGeometry(wallW, 24)),
-    keep(new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95 })),
+    glaze({ map: floorTex, roughness: 0.95 }),
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.set((SPAN.from + SPAN.to) / 2, FLOOR_Y, WALL_Z + 12);
@@ -286,7 +294,7 @@ export function buildWorld(p: Palette, tint: { base: string; head: string } = { 
     ghosts,
     impact,
     measure,
-    materials: [plateMat, ferryMat],
+    materials: porcelainMats,
     dispose: () => disposables.forEach((d) => d.dispose()),
   };
 }
