@@ -33,8 +33,12 @@ def replay_pipeline(speed: float = 1.0, bundle: dict | None = None,
             sleep(max(0, raw["t_ms"] - last) / 1000 / speed)
             last = raw["t_ms"]
             emit(Event(raw["t_ms"], raw["stage"], raw["type"], raw["data"]))
-        # a fresh id, so the stored copy never overwrites a real run; the seal stays that of the recorded run
-        return {**sealed, "run_id": time.strftime("%Y%m%d-%H%M%S") + "-aaaaaa"}
+        # a fresh id, so the stored copy never overwrites a real run; sealed again so it still verifies
+        from noether.bundle import _digest
+
+        fresh = {**sealed, "run_id": time.strftime("%Y%m%d-%H%M%S") + "-aaaaaa"}
+        fresh["sha256"] = _digest(fresh)
+        return fresh
 
     return run
 

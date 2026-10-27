@@ -8,6 +8,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from noether.bundle import verify_bundle
 from noether.limits import RateLimited, RateLimiter
 from noether.live import PipelineError, parse_pr_url
 from noether.server import RUN_ID, create_app, sse, stream_run
@@ -90,11 +91,11 @@ def test_stream_ends_with_the_sealed_bundle(store):
     assert names[-1] == "result"
     result = got[-1][1]
     assert result["verdict"] == "BROKEN" and result["stored"] is True
-    assert result["sha256"] == sealed["sha256"] and RUN_ID.fullmatch(result["run_id"])
+    assert verify_bundle(result["bundle"]) and result["sha256"] == result["bundle"]["sha256"] and RUN_ID.fullmatch(result["run_id"])
     assert got[0][1]["stage"] == "ingest"
     # the stored copy comes back from GET
     stored = client.get(f"/api/runs/{result['run_id']}")
-    assert stored.status_code == 200 and stored.json()["sha256"] == sealed["sha256"]
+    assert stored.status_code == 200 and stored.json()["sha256"] == result["sha256"]
 
 
 def test_bad_inputs_are_rejected_before_streaming(store):
