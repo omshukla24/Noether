@@ -37,7 +37,8 @@ DEFAULT_BUDGET = {"intent": 4000, "summary": 2000, "pin": 16000, "judge": 6000, 
 # Live check 2026-10-27: chat_template_kwargs {"enable_thinking": false} drops reasoning to 0 tokens on Nano, Super
 # and Ultra; "/no_think" and reasoning_effort did nothing. Only plain reading tasks go without thinking; the judge
 # and the fixer keep it because a wrong "intended" or a wrong edit costs more than the tokens.
-NO_THINKING_ROLES = frozenset({"intent", "summary"})
+# pin: the sandbox throws out wrong tests, so speed beats deliberation there (thinking made it ~200 s)
+NO_THINKING_ROLES = frozenset({"intent", "summary", "pin"})
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 RETRY_BACKOFF = (1.0, 3.0)  # seconds before retry 1 and 2

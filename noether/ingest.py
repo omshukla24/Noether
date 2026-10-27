@@ -9,6 +9,7 @@ from __future__ import annotations
 import difflib
 import hashlib
 import json
+import posixpath
 import re
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,6 +19,7 @@ from urllib.parse import quote
 import httpx
 
 from noether.model import Change, ChangedFile, Hunk
+from noether.related import is_candidate, pick_related
 from noether.runner import read_tree
 
 API = "https://api.github.com"
@@ -26,6 +28,8 @@ MAX_SOURCE_BYTES = 200_000
 MAX_SOURCE_FILES = 60  # raw fetches per side; the diff itself is always complete
 FILES_PER_PAGE = 100
 MAX_FILE_PAGES = 10
+MAX_RELATED_FETCHES = 20  # raw fetches for unchanged neighbours of the change
+MAX_RELATED_FILE_BYTES = 60_000
 MAX_COMMIT_MESSAGES = 20
 
 _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", re.M)
@@ -71,6 +75,8 @@ def from_local(fixture_dir: str) -> Change:
         )
         diffs.append(_file_diff(path, path, status, patch))
 
+    texts = {path: t for path, data in base.items() if is_candidate(path) and (t := _decode(data)) is not None}
+    related = pick_related([f.path for f in files], texts)
     return Change(
         repo=meta.get("repo") or f"local/{root.name}",
         base_ref="base",
@@ -83,6 +89,7 @@ def from_local(fixture_dir: str) -> Change:
         head_sha=_tree_id(head),
         source="local",
         local_dir=str(root),
+        related=related,
     )
 
 
@@ -145,6 +152,7 @@ def from_pr_url(url: str, token: str | None = None, http: httpx.Client | None = 
         head_repo = (pr["head"].get("repo") or {}).get("full_name") or base_repo
         base_sha, head_sha = pr["base"]["sha"], pr["head"]["sha"]
         files, diff = _assemble(client, token, entries, (base_repo, base_sha), (head_repo, head_sha))
+        related = _related(client, token, (base_repo, base_sha), [f.path for f in files])
     return Change(
         repo=base_repo,
         base_ref=pr["base"]["ref"],
@@ -157,6 +165,7 @@ def from_pr_url(url: str, token: str | None = None, http: httpx.Client | None = 
         head_sha=head_sha,
         pr_url=url,
         source="github",
+        related=related,
     )
 
 
@@ -174,6 +183,7 @@ def from_refs(repo: str, base: str, head: str, token: str | None = None, http: h
         base_sha = first["merge_base_commit"]["sha"]  # what the head branch really diverged from
         head_sha = head if _SHA.match(head) else _resolve_sha(client, repo, head, token)
         files, diff = _assemble(client, token, entries, (repo, base_sha), (repo, head_sha))
+        related = _related(client, token, (repo, base_sha), [f.path for f in files])
     messages = [c["commit"]["message"] for c in first.get("commits", [])[:MAX_COMMIT_MESSAGES]]
     return Change(
         repo=repo,
@@ -186,7 +196,33 @@ def from_refs(repo: str, base: str, head: str, token: str | None = None, http: h
         base_sha=base_sha,
         head_sha=head_sha,
         source="github",
+        related=related,
     )
+
+
+def _related(client: httpx.Client, token: str | None, at: tuple[str, str], changed: list[str]) -> dict[str, str]:
+    """Fetch the nearest unchanged JS files from the base tree and keep the ones the change is felt through."""
+    repo, sha = at
+    try:
+        tree = _get_json(client, f"{API}/repos/{repo}/git/trees/{sha}", token, {"recursive": "1"})
+    except IngestError:
+        return {}  # extra context only; the pin stage still works from the changed files
+    folders = [posixpath.dirname(p) for p in changed]
+
+    def distance(path: str) -> int:
+        d = posixpath.dirname(path)
+        return min((0 if d == f else 1 if d.startswith(f) or f.startswith(d) else 2) for f in folders) if folders else 2
+
+    candidates = [e["path"] for e in tree.get("tree", [])
+                  if e.get("type") == "blob" and e.get("size", 0) <= MAX_RELATED_FILE_BYTES
+                  and is_candidate(e["path"]) and e["path"] not in changed]
+    candidates.sort(key=lambda p: (distance(p), p.count("/"), p))
+    sources = {}
+    for path in candidates[:MAX_RELATED_FETCHES]:
+        text = _raw(client, token, at, path)
+        if text is not None:
+            sources[path] = text
+    return pick_related(changed, sources)
 
 
 @contextmanager

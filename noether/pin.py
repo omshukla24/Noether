@@ -10,7 +10,7 @@ import re
 
 from noether.model import Change, Invariant
 from noether.nemotron import Client
-from noether.prompt_util import clip, file_diff, hunk_ranges, js_sources
+from noether.prompt_util import clip, file_diff, js_sources, numbered
 
 PINNED_DIR = ".noether/pinned"
 MAX_TEST_CHARS = 6000
@@ -65,12 +65,15 @@ SYSTEM = """You write characterization tests for JavaScript code. A characteriza
 
 Rules:
 - Describe BASE behaviour exactly as the BASE source shows it. The pull request title is context only: do not test the new behaviour it announces.
-- Prefer behaviours the diff touches, but always assert what the BASE code does, with expected values you worked out by reading the BASE source. Never guess a value.
+- Pin BEHAVIOUR, not configuration. Every test must call the code and observe what it does. Never write a test that only reads a constant or an exported value and compares it to a literal: that checks a number, not a behaviour, and such tests are rejected.
+- Aim at what the changed lines influence, including through the related modules shown (callers, data, recorded inputs). A change is often only visible after many calls: drive the public API over several steps or inputs and assert on the outcome.
+- Prefer properties the BASE code guarantees over exact numbers you cannot compute by hand: conserved quantities (a value that stays the same across steps), bounds, monotonic trends, round trips, symmetry, idempotence, and the outcomes of any recorded inputs, examples or fixtures the repo ships (for example, a recorded run that finishes). Use exact values only when you can derive them from the BASE source with certainty.
+- Mix: at least half of the tests must exercise behaviour across several calls or steps; the rest may be single-call checks of changed functions.
 - One behavioural claim per test, one to three asserts, small inputs, no snapshots of large outputs.
 - Each test is its own ESM file run by node:test. Start it with exactly:
   import test from 'node:test';
   import assert from 'node:assert/strict';
-- Import the code under test only by a relative path from .noether/pinned/<name>.test.mjs, so a file src/x.js is imported as '../../src/x.js'. Use exported symbols only; the list of exports is given for each file.
+- Import code only from the files shown (changed or related), by a relative path from .noether/pinned/<name>.test.mjs, so a file src/x.js is imported as '../../src/x.js'. Use exported symbols only; the exports are listed for each file.
 - Deterministic and pure: no network, no file system, no clock, no randomness, no environment, no child processes, no require, no dynamic import.
 - name: kebab-case, 3 to 60 characters, only a-z, 0-9 and '-'. Names must be unique.
 - claim: one plain sentence a code reviewer understands, such as "formatPrice rounds half up to two decimals".
@@ -88,8 +91,36 @@ def exports_of(source: str) -> list[str]:
 
 
 def pinnable_paths(change: Change) -> dict[str, str]:
-    """path -> BASE source for every changed JavaScript file with behaviour to describe."""
-    return {f.path: f.base_source for f in js_sources(change, "base")}
+    """path -> BASE source for every file a check may import: changed JS files plus their related files."""
+    paths = {f.path: f.base_source for f in js_sources(change, "base")}
+    for path, source in change.related.items():
+        paths.setdefault(path, source)
+    return paths
+
+
+_IMPORT_CLAUSE = re.compile(r"""\bimport\s+([^'";]+?)\s+from\s*['"](?!node:)[^'"]+['"]""")
+
+
+def _imported_names(code: str) -> tuple[set[str], set[str]]:
+    """(plain names, namespace names) bound by imports of repo modules."""
+    names, namespaces = set(), set()
+    for clause in _IMPORT_CLAUSE.findall(code):
+        if m := re.search(r"\*\s+as\s+([A-Za-z_$][\w$]*)", clause):
+            namespaces.add(m.group(1))
+        if m := re.search(r"\{([^}]*)\}", clause):
+            names |= {part.split(" as ")[-1].strip() for part in m.group(1).split(",") if part.strip()}
+        if m := re.match(r"\s*([A-Za-z_$][\w$]*)\s*(?:,|$)", clause):
+            names.add(m.group(1))
+    return names, namespaces
+
+
+def _calls_imported_code(code: str) -> bool:
+    """A check that never calls repo code is only comparing a value it read, not a behaviour."""
+    names, namespaces = _imported_names(code)
+    for n in names:
+        if re.search(rf"(?<![\w$.]){re.escape(n)}(?:\.[\w$]+)*\s*\(", code):
+            return True
+    return any(re.search(rf"(?<![\w$.]){re.escape(n)}(?:\.[\w$]+)+\s*\(", code) for n in namespaces)
 
 
 def build_pin_messages(change: Change, max_items: int = 12) -> list[dict]:
@@ -100,18 +131,75 @@ def build_pin_messages(change: Change, max_items: int = 12) -> list[dict]:
         source = clip(f.base_source, min(MAX_SOURCE_CHARS, max(room, 0)))
         exports = ", ".join(exports_of(f.base_source)) or ("none found as ES exports; if the file uses "
                                                            "module.exports, import its default and read properties")
-        diff = clip(file_diff(change.diff, f.path), MAX_DIFF_CHARS)
+        # Only BASE text goes in: with the head side in view, models describe the new behaviour.
+        ranges = base_ranges(file_diff(change.diff, f.path)) or "unknown"
         parts += ["", f"### {f.path} ({f.status})", f"Exports: {exports}",
-                  f"Changed line ranges on the head side: {hunk_ranges(f)}"]
-        if diff:
-            parts += ["Diff:", "```diff", diff, "```"]
-        parts += ["BASE source:", "```js", source, "```"]
-        room -= len(source) + len(diff)
+                  f"BASE lines this pull request rewrites: {ranges}",
+                  "BASE source (line numbers on the left are not part of the code):", "```js", numbered(source), "```"]
+        room -= len(source)
+    if change.related:
+        parts += ["", "Related unchanged files (BASE source). The change is felt through these: callers, data, recorded inputs."]
+        for path, text in change.related.items():
+            if room <= 0:
+                break
+            source = clip(text, min(MAX_SOURCE_CHARS, room))
+            exports = ", ".join(exports_of(text)) or "none found as ES exports"
+            parts += ["", f"### {path} (unchanged)", f"Exports: {exports}", "BASE source:", "```js", source, "```"]
+            room -= len(source)
     return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": "\n".join(parts)}]
 
 
 def _norm_path(path: str) -> str:
     return posixpath.normpath(path.replace("\\", "/"))
+
+
+_BASE_HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? ", re.M)
+
+
+def base_ranges(file_patch: str) -> str:
+    """'12-18, 40' style list of the BASE lines each hunk of one file's diff replaces."""
+    out = []
+    for start, length in _BASE_HUNK.findall(file_patch):
+        a, n = int(start), int(length or 1)
+        if n:
+            out.append(f"{a}-{a + n - 1}" if n > 1 else str(a))
+    return ", ".join(out)
+
+
+def _add_missing_imports(code: str, change: Change, target: str) -> str:
+    """Models often call an export of the target file without importing it; add the import line."""
+    source = pinnable_paths(change).get(target)
+    if source is None:
+        return code
+    names, namespaces = _imported_names(code)
+    missing = [e for e in exports_of(source) if e != "default" and e not in names
+               and re.search(rf"(?<![\w$.]){re.escape(e)}\b", code)
+               and not re.search(rf"\b(?:const|let|var|function|class)\s+{re.escape(e)}\b", code)]
+    if not missing or namespaces:
+        return code
+    line = f"import {{ {', '.join(missing)} }} from '../../{target}';\n"
+    anchor = _NODE_ASSERT.search(code)
+    if not anchor:
+        return line + code
+    end = code.find("\n", anchor.end())
+    end = len(code) if end < 0 else end + 1
+    return code[:end] + line + code[end:]
+
+
+def _tidy(item: dict, change: Change | None = None) -> dict:
+    """Undo the two slips models make most: a name that is not kebab-case, and a target_file written
+    as the import path ('../../src/x.js') instead of the repo path ('src/x.js')."""
+    out = dict(item)
+    if isinstance(out.get("name"), str):
+        out["name"] = re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9]+", "-", out["name"].lower())).strip("-")[:60]
+    target = out.get("target_file")
+    if isinstance(target, str) and target.startswith("."):
+        resolved = posixpath.normpath(posixpath.join(PINNED_DIR, target.replace("\\", "/")))
+        if not resolved.startswith(".."):
+            out["target_file"] = resolved
+    if change is not None and isinstance(out.get("test_code"), str) and isinstance(out.get("target_file"), str):
+        out["test_code"] = _add_missing_imports(out["test_code"], change, _norm_path(out["target_file"]))
+    return out
 
 
 def validate_invariant(item: dict, change: Change, seen: set[str] | None = None) -> str | None:
@@ -145,13 +233,16 @@ def validate_invariant(item: dict, change: Change, seen: set[str] | None = None)
         return "missing node:test import"
     if not _NODE_ASSERT.search(code):
         return "missing node:assert/strict import"
+    allowed = pinnable_paths(change)
     for spec in _IMPORTED.findall(code):
         if spec in ("node:test", "node:assert/strict"):
             continue
-        if posixpath.normpath(posixpath.join(PINNED_DIR, spec)) != target:
-            return f"imports {spec}, only the target module is allowed"
+        if posixpath.normpath(posixpath.join(PINNED_DIR, spec)) not in allowed:
+            return f"imports {spec}, only the changed and related files are allowed"
     if not any(args.strip() not in ("", "true", "1") for args in _ASSERT_CALL.findall(code)):
         return "empty or missing assert"
+    if not _calls_imported_code(code):
+        return "only reads a value; a check must call the code"
     return None
 
 
@@ -164,6 +255,8 @@ def pin_invariants(client: Client, change: Change, max_items: int = 12) -> tuple
     dropped: list[dict] = []
     seen: set[str] = set()
     for item in data["invariants"]:
+        if isinstance(item, dict):
+            item = _tidy(item, change)
         name = item.get("name", "?") if isinstance(item, dict) else "?"
         if len(kept) >= max_items:
             dropped.append({"name": name, "reason": f"over the cap of {max_items} tests"})
@@ -177,3 +270,40 @@ def pin_invariants(client: Client, change: Change, max_items: int = 12) -> tuple
                               target_file=_norm_path(item["target_file"]), target_symbol=item["target_symbol"],
                               test_code=item["test_code"]))
     return kept, dropped
+
+
+REPAIR_NOTE = """These checks ran against the BASE code in a sandbox and failed. A characterization check must pass on BASE, so each failure means the check is wrong, not the code.
+For each one, return a corrected version with the SAME name: fix imports, how state or inputs are built, or the expected value and the claim, using the failure output to see what BASE really does.
+If the failure shows a value, you may adopt it as the expected value when it is a stable result of BASE (not time or randomness). Leave a check out if it cannot be fixed.
+Return only {"invariants": [...]}."""
+
+
+def repair_invariants(client: Client, change: Change, failures: list[tuple[Invariant, str]],
+                      max_output: int = 1500) -> tuple[list[Invariant], list[dict]]:
+    """One repair round for checks that were red on BASE. Returns (fixed, dropped); fixed keep their names."""
+    if not failures:
+        return [], []
+    wanted = {inv.name for inv, _ in failures}
+    messages = build_pin_messages(change, len(failures))
+    lines = [REPAIR_NOTE, ""]
+    for inv, output in failures:
+        lines += [f"### {inv.name}", f"claim: {inv.claim}", f"target_file: {inv.target_file}",
+                  "```js", inv.test_code, "```", "Failure on BASE:", "```", clip(output.strip(), max_output), "```", ""]
+    messages[1]["content"] += "\n\n" + "\n".join(lines)
+    data = client.chat_json("pin", messages, INVARIANT_SCHEMA)
+    fixed: list[Invariant] = []
+    dropped: list[dict] = []
+    for item in data["invariants"]:
+        if not isinstance(item, dict):
+            continue
+        item = _tidy(item, change)
+        name = item.get("name", "?")
+        if name not in wanted or any(f.name == name for f in fixed):
+            continue
+        reason = validate_invariant(item, change)
+        if reason:
+            dropped.append({"name": name, "reason": f"repair rejected: {reason}"})
+            continue
+        fixed.append(Invariant(name=name, claim=item["claim"].strip(), target_file=_norm_path(item["target_file"]),
+                               target_symbol=item["target_symbol"], test_code=item["test_code"]))
+    return fixed, dropped

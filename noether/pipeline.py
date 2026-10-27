@@ -53,6 +53,7 @@ class Stages:
     """The model-side functions the pipeline calls. Defaults are the real ones."""
     read_intent: Callable[..., Any] = _read_intent
     pin_invariants: Callable[..., Any] = _lazy("noether.pin", "pin_invariants")
+    repair_invariants: Callable[..., Any] | None = _lazy("noether.pin", "repair_invariants")
     judge_flips: Callable[..., Any] = _lazy("noether.judge", "judge_flips")
     locate_and_propose: Callable[..., Any] = _lazy("noether.fix", "locate_and_propose")
     decide: Callable[..., Any] = _lazy("noether.verdict", "decide")
@@ -220,8 +221,10 @@ class _Check:
         candidates = self.run.invariants
         pinned: list[Invariant] = []
         flaky: list[str] = []
+        repaired: list[str] = []
         if candidates:
             first = self.tests("base", snap, candidates, 1)
+            candidates, first, repaired = self.repair(snap, candidates, first)
             second = self.tests("base", snap, candidates, 2)
             for inv in candidates:
                 a, b = first[inv.name], second[inv.name]
@@ -238,8 +241,29 @@ class _Check:
         self.run.invariants = pinned
         self.guard()
         self.run.own_suite_base = self.runner.run_own_suite(snap)
-        self.event("base", "done", pinned=[i.name for i in pinned], flaky=flaky,
+        self.event("base", "done", pinned=[i.name for i in pinned], flaky=flaky, repaired=repaired,
                    own_suite=suite_data(self.run.own_suite_base), checkpoint=snap.image)
+
+    def repair(self, snap: Snapshot, candidates: list[Invariant], first: dict[str, TestResult]
+               ) -> tuple[list[Invariant], dict[str, TestResult], list[str]]:
+        """One round: checks red on the first base run go back to the model with their real failure output.
+        Characterization means recording what BASE does, so a check that misread BASE gets one chance to read it again."""
+        failures = [(inv, first[inv.name].output) for inv in candidates if not first[inv.name].passed]
+        if not failures or self.stages.repair_invariants is None:
+            return candidates, first, []
+        try:
+            fixed, dropped = self.stages.repair_invariants(self.client, self.run.change, failures)
+        except _model_errors() as exc:
+            if isinstance(exc, _nemotron_errors("TokenCapHit")):
+                raise
+            return candidates, first, []  # the originals stay and fail closed below
+        self.run.dropped.extend(dropped)
+        if not fixed:
+            return candidates, first, []
+        by_name = {f.name: f for f in fixed}
+        candidates = [by_name.get(inv.name, inv) for inv in candidates]
+        rerun = self.tests("base", snap, fixed, 1)
+        return candidates, {**first, **rerun}, sorted(by_name)
 
     def do_head(self) -> None:
         self.begin("head")

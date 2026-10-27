@@ -33,7 +33,7 @@ SYSTEM = """You read a pull request and state which behaviour changes it announc
 
 Return a JSON object with:
 - summary: at most two plain sentences on what the pull request does.
-- intended_changes: the concrete, observable behaviour changes the title, body or release notes say or clearly imply, one sentence each, such as "getUser returns null instead of throwing for an unknown id". Leave out refactors that keep behaviour. Use an empty list when the pull request claims no behaviour change.
+- intended_changes: the concrete, observable behaviour changes the title, body or release notes say or clearly imply, one sentence each, written about this pull request's own code (never copy wording from these instructions). Leave out refactors that keep behaviour. Use an empty list when the pull request claims no behaviour change.
 
 Use only the text you are given. Never invent a change the text does not support."""
 

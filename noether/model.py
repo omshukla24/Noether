@@ -45,6 +45,7 @@ class Change:
     pr_url: str = ""
     source: Literal["github", "local"] = "github"
     local_dir: str = ""
+    related: dict[str, str] = field(default_factory=dict)  # unchanged path -> BASE source, see related.py
 
 
 @dataclass

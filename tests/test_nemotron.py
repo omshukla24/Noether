@@ -36,12 +36,14 @@ def test_chat_returns_text_and_records_the_call(make_client):
     assert client.sent[0]["max_tokens"] == DEFAULT_BUDGET["judge"]
 
 
-def test_thinking_is_off_only_for_reading_roles(make_client):
-    client = make_client(make_client.ok("a"), make_client.ok("b"))
+def test_thinking_is_off_for_reading_and_pinning_but_on_for_judging(make_client):
+    client = make_client(make_client.ok("a"), make_client.ok("b"), make_client.ok("c"))
     client.chat("intent", [{"role": "user", "content": "x"}])
     client.chat("pin", [{"role": "user", "content": "x"}])
+    client.chat("judge", [{"role": "user", "content": "x"}])
     assert client.sent[0]["chat_template_kwargs"] == {"enable_thinking": False}
-    assert "chat_template_kwargs" not in client.sent[1]
+    assert client.sent[1]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert "chat_template_kwargs" not in client.sent[2]
 
 
 def test_empty_content_retries_once_with_double_budget(make_client):

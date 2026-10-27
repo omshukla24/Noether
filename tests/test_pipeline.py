@@ -136,7 +136,7 @@ def test_event_data_keys_match_the_contract_exactly(tiny):
     assert sorted((d["name"], d["run"]) for d in base_progress) == sorted(
         (n, r) for n in (LINE_TOTAL.name, DISCOUNT.name, SHIPPING.name) for r in (1, 2))
     base_done = of(events, "base", "done")[0]
-    assert set(base_done) == {"pinned", "flaky", "own_suite", "checkpoint"} and set(base_done["own_suite"]) == suite
+    assert set(base_done) == {"pinned", "flaky", "repaired", "own_suite", "checkpoint"} and set(base_done["own_suite"]) == suite
     assert base_done["flaky"] == [] and len(base_done["pinned"]) == 3
     assert all(set(d) == {"name", "passed"} for d in of(events, "head", "progress"))
     head_done = of(events, "head", "done")[0]
@@ -376,3 +376,20 @@ def test_real_verdict_and_bundle_modules_agree_with_the_pipeline(tmp_path):
     assert run.verdict == "BROKEN"
     assert next(f for f in run.flips if f.invariant.name == DISCOUNT.name).fix.proved
     assert Path(run.timeline[-1].data["bundle"]).exists()
+
+
+def test_a_check_red_on_base_gets_one_repair_and_is_pinned_when_it_then_holds(tmp_path):
+    # First base run: SHIPPING is red. The repaired version is green on the re-run and on run 2.
+    runner = ScriptedRunner(plan={"base": [{SHIPPING.name: False}, {SHIPPING.name: True}, {SHIPPING.name: True}]})
+    seen = []
+
+    def repair(client, change, failures):
+        seen.extend(inv.name for inv, _ in failures)
+        return [replace(inv, claim=inv.claim + " (read again)") for inv, _ in failures], []
+
+    run, events, _ = run_scripted(runner, stages=make_stages(repair_invariants=repair), tmp=tmp_path)
+
+    assert seen == [SHIPPING.name]
+    assert of(events, "base", "done")[0]["repaired"] == [SHIPPING.name]
+    assert SHIPPING.name in [i.name for i in run.invariants]
+    assert next(i for i in run.invariants if i.name == SHIPPING.name).claim.endswith("(read again)")

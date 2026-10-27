@@ -48,8 +48,8 @@ def test_valid_item_passes(change):
     ({"test_code": GOOD_CODE.replace("assert.equal(clamp(15, 0, 10), 10);", "assert.ok();")}, "empty or missing assert"),
     ({"test_code": GOOD_CODE.replace("assert.equal(clamp(15, 0, 10), 10);", "clamp(15, 0, 10);")}, "empty or missing assert"),
     ({"test_code": GOOD_CODE.replace("assert.equal(clamp(15, 0, 10), 10);", "assert.ok(true);")}, "empty or missing assert"),
-    ({"test_code": GOOD_CODE + "import x from '../../src/other.js';"}, "only the target module"),
-    ({"test_code": GOOD_CODE + "import lodash from 'lodash';"}, "only the target module"),
+    ({"test_code": GOOD_CODE + "import x from '../../src/other.js';"}, "only the changed and related files"),
+    ({"test_code": GOOD_CODE + "import lodash from 'lodash';"}, "only the changed and related files"),
 ])
 def test_invalid_items_are_rejected(change, over, reason):
     assert reason in validate_invariant(item(**over), change)
@@ -155,3 +155,24 @@ def test_file_diff_picks_one_file_and_misses_cleanly(change):
     assert file_diff(change.diff, "src/physics.js").startswith("diff --git a/src/physics.js")
     assert "README" not in file_diff(change.diff, "src/physics.js")
     assert file_diff(change.diff, "src/none.js") == ""
+
+
+def test_a_check_that_only_reads_a_constant_is_rejected(change):
+    code = ("import test from 'node:test';\nimport assert from 'node:assert/strict';\n"
+            "import { GRAVITY } from '../../src/physics.js';\n"
+            "test('gravity', () => { assert.equal(typeof clamp, 'function'); });\n")
+    item = {"name": "gravity-value", "claim": "gravity is 30", "target_file": "src/physics.js",
+            "target_symbol": "clamp", "test_code": code}
+    assert validate_invariant(item, change) == "only reads a value; a check must call the code"
+
+
+def test_a_check_may_import_a_related_file(change):
+    from dataclasses import replace
+    related = replace(change, related={"src/replay.js": "export function simulate(level, inputs) { return {}; }"})
+    code = ("import test from 'node:test';\nimport assert from 'node:assert/strict';\n"
+            "import { simulate } from '../../src/replay.js';\n"
+            "test('runs', () => { assert.equal(typeof simulate({}, []), 'object'); });\n")
+    item = {"name": "replay-runs", "claim": "simulate returns an object", "target_file": "src/replay.js",
+            "target_symbol": "simulate", "test_code": code}
+    assert validate_invariant(item, related) is None
+    assert validate_invariant(item, change) is not None  # without the related file it is unknown
