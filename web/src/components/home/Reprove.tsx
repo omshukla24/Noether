@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GAP, formatChange, ghostRun, type Build } from "@/hopper/sim";
 import { prefersReducedMotion } from "@/motion/env.js";
@@ -43,8 +43,18 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
   const game = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HopperScene | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
-  const pad = useHopperControls(game, sceneRef, setPlaying);
+  // taking the controls always restarts a paused clock
+  const play = useCallback((on: boolean) => {
+    setPlaying(on);
+    if (on) setPaused(false);
+  }, []);
+  const pad = useHopperControls(game, sceneRef, play);
+
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
   const jf = runs.fixed.jump!;
   const jh = runs.head.jump!;
 
@@ -152,8 +162,18 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
             <button type="button" className={hero.play} onClick={() => game.current?.focus()}>
               {playing ? "Playing: Escape to stop" : "Play the fixed build"}
             </button>
-            <button type="button" className={hero.ghostBtn} onClick={() => sceneRef.current?.replay()}>
+            <button
+              type="button"
+              className={hero.ghostBtn}
+              onClick={() => {
+                setPaused(false);
+                sceneRef.current?.replay();
+              }}
+            >
               Replay the run
+            </button>
+            <button type="button" className={hero.ghostBtn} onClick={() => setPaused((p) => !p)}>
+              {paused ? "Resume" : "Pause"}
             </button>
           </div>
           <p className={styles.keys} aria-hidden="true">
@@ -226,11 +246,11 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
         </p>
 
         <div className={`${hero.pad} ${styles.pad}`} aria-hidden="true">
-          <button type="button" tabIndex={-1} {...pad("x", -1, () => setPlaying(true))}>Left</button>
-          <button type="button" tabIndex={-1} {...pad("z", -1, () => setPlaying(true))}>Back</button>
-          <button type="button" tabIndex={-1} {...pad("z", 1, () => setPlaying(true))}>Front</button>
-          <button type="button" tabIndex={-1} {...pad("x", 1, () => setPlaying(true))}>Right</button>
-          <button type="button" tabIndex={-1} className={hero.jump} {...pad("jump", 1, () => setPlaying(true))}>Jump</button>
+          <button type="button" tabIndex={-1} {...pad("x", -1, () => play(true))}>Left</button>
+          <button type="button" tabIndex={-1} {...pad("z", -1, () => play(true))}>Back</button>
+          <button type="button" tabIndex={-1} {...pad("z", 1, () => play(true))}>Front</button>
+          <button type="button" tabIndex={-1} {...pad("x", 1, () => play(true))}>Right</button>
+          <button type="button" tabIndex={-1} className={hero.jump} {...pad("jump", 1, () => play(true))}>Jump</button>
         </div>
       </div>
     </section>

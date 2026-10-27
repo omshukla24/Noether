@@ -45,6 +45,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
   const tags = useRef<Record<string, HTMLElement | null>>({});
   const [build, setBuild] = useState<Build>("head");
   const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -138,6 +139,10 @@ export function Hero({ ownSuitePassed }: HeroProps) {
     sceneRef.current?.setBuild(build);
   }, [build]);
 
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
+
   // keyboard only while the level has focus, so Space still scrolls the page elsewhere
   useEffect(() => {
     const el = game.current;
@@ -168,6 +173,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
       push();
     };
     const onFocus = () => {
+      setPaused(false);
       setPlaying(true);
       sceneRef.current?.setPlaying(true);
     };
@@ -193,6 +199,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
   const touch = (axis: keyof Input, v: number) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.preventDefault();
+      setPaused(false);
       sceneRef.current?.setPlaying(true);
       setPlaying(true);
       touchInput.current = { ...touchInput.current, [axis]: axis === "jump" ? true : v };
@@ -269,8 +276,18 @@ export function Hero({ ownSuitePassed }: HeroProps) {
                 </button>
               ))}
             </div>
-            <button type="button" className={styles.ghostBtn} onClick={() => sceneRef.current?.replay()}>
+            <button
+              type="button"
+              className={styles.ghostBtn}
+              onClick={() => {
+                setPaused(false);
+                sceneRef.current?.replay();
+              }}
+            >
               Replay the run
+            </button>
+            <button type="button" className={styles.ghostBtn} onClick={() => setPaused((p) => !p)}>
+              {paused ? "Resume" : "Pause"}
             </button>
           </div>
           <p className={styles.keys} aria-hidden="true">
