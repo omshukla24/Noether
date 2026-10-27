@@ -1,0 +1,89 @@
+.bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) clamp(16px, 3vw, 40px);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  border-bottom: var(--bd-faint);
+  backdrop-filter: saturate(1.1) blur(6px);
+  transition: color var(--dur) var(--ease-settle), background-color var(--dur) var(--ease-settle);
+}
+
+:global(html[data-theme="dark"]) .bar {
+  color: var(--ground);
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+  border-bottom-color: #2a2b30;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.crumb {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+  min-width: 10ch;
+}
+
+:global(html[data-theme="dark"]) .crumb { color: #a9a79f; }
+
+.track {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 28px);
+}
+
+.link,
+.cta {
+  font-size: var(--fs-small);
+  color: inherit;
+  text-decoration: none;
+  padding: 10px 2px;
+  min-height: 24px;
+}
+
+.link:hover { color: var(--accent-ink); }
+:global(html[data-theme="dark"]) .link:hover { color: #b9b3ff; }
+
+.cta {
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: var(--r-chip);
+}
+
+.cta:hover {
+  background: var(--ink);
+  color: var(--ground);
+  border-color: var(--ink);
+}
+
+/* The active route is a ruler tick that slides under its label, not a pill. */
+.tick {
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 1px;
+  height: 9px;
+  background: var(--accent);
+  box-shadow: -6px 4px 0 -0.5px var(--line), 6px 4px 0 -0.5px var(--line);
+  transition: transform var(--dur-slow) var(--ease-settle), opacity var(--dur) linear;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .crumb { display: none; }
+  .link { display: none; }
+}

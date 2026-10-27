@@ -1,0 +1,41 @@
+.foot {
+  background: var(--ink);
+  color: var(--ground);
+  padding: var(--s-8) clamp(16px, 3vw, 40px) var(--s-6);
+}
+
+.pun {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(2.2rem, 1.4rem + 4vw, 5.5rem);
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  margin: 0 0 var(--s-7);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4) var(--s-6);
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  color: #c9c6bc;
+}
+
+.clock { font-variant-numeric: tabular-nums; }
+
+.links {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-5);
+}
+
+.links a {
+  color: var(--ground);
+  text-decoration: none;
+  padding: 6px 0;
+}
+
+.links a:hover { text-decoration: underline; text-underline-offset: 4px; }
