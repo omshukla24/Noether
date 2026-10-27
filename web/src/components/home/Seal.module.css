@@ -73,7 +73,7 @@
 .copy:hover { border-color: var(--ink); }
 .code pre { margin: 0; padding: var(--s-4); overflow-x: auto; font-family: var(--font-mono); font-size: var(--fs-micro); line-height: 1.75; }
 .codeLine { display: block; white-space: pre; }
-.ln { display: inline-block; width: 3ch; margin-right: var(--s-3); color: var(--faint); user-select: none; }
+.ln { display: inline-block; width: 3ch; margin-right: var(--s-3); color: var(--muted); user-select: none; }
 
 /* velocity marquee: speeds up and skews with scroll, flips direction when scrolling back */
 .marquee { margin-top: var(--s-9); padding: var(--s-5) 0; border-top: 1px solid var(--accent); overflow: hidden; background: var(--ground); }

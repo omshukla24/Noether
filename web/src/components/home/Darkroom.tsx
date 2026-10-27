@@ -101,7 +101,6 @@ export function Darkroom({ plates, seconds }: DarkroomProps) {
                   className={styles.plate}
                   aria-expanded={open === p.key}
                   aria-controls="tray"
-                  aria-label={`${p.title}, snapshot ${p.full}. ${open === p.key ? "Close" : "Open"} what ran in it.`}
                   onClick={(e) => {
                     opener.current = e.currentTarget;
                     if (open === p.key) close();
