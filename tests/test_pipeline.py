@@ -354,7 +354,7 @@ def test_a_cap_hit_while_fixing_keeps_the_broken_verdict(tmp_path):
 # --------------------------------------------------------------- ids and real modules
 
 
-def test_run_id_is_used_or_generated(tmp_path):
+def test_run_id_is_used_when_given_and_made_up_otherwise(tmp_path):
     named = run_check(from_local(str(FIXTURE)), FakeClient(), ScriptedRunner(), stages=make_stages(), run_id="abc",
                       out_dir=str(tmp_path))
     auto = run_check(from_local(str(FIXTURE)), FakeClient(), ScriptedRunner(), stages=make_stages(), out_dir=str(tmp_path))
