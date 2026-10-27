@@ -16,7 +16,7 @@ const URL_HINT = "Use the form https://github.com/owner/repo/pull/12 (public rep
 
 export function CheckCockpit() {
   const [state, dispatch] = useReducer(reduce, initialState);
-  const [url, setUrl] = useState("");
+  const input = useRef<HTMLInputElement>(null);
   const [urlError, setUrlError] = useState("");
   const abort = useRef<AbortController | null>(null);
   const timer = useRef(0);
@@ -31,7 +31,7 @@ export function CheckCockpit() {
 
   useEffect(() => {
     const pr = new URLSearchParams(window.location.search).get("pr");
-    if (pr) setUrl(pr.slice(0, 200));
+    if (pr && input.current) input.current.value = pr.slice(0, 200);
     return halt;
   }, [halt]);
 
@@ -40,6 +40,7 @@ export function CheckCockpit() {
   function runLive(event: React.FormEvent) {
     event.preventDefault();
     if (running) return;
+    const url = input.current?.value ?? "";
     if (!parsePullUrl(url)) {
       setUrlError(URL_HINT);
       return;
@@ -110,8 +111,7 @@ export function CheckCockpit() {
             autoComplete="off"
             spellCheck={false}
             placeholder="https://github.com/owner/repo/pull/12"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            ref={input}
             disabled={running}
             aria-invalid={urlError ? true : undefined}
             aria-describedby="pr-hint"

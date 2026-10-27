@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { verifySeal, type Bundle } from "@/lib/bundle";
 import styles from "./Run.module.css";
 
@@ -15,7 +15,7 @@ const COPY: Record<Check, { head: string; body: string }> = {
 
 export function SealCheck({ bundle }: { bundle: Bundle }) {
   const [check, setCheck] = useState<Check>("checking");
-  const [download, setDownload] = useState("");
+  const link = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -24,7 +24,7 @@ export function SealCheck({ bundle }: { bundle: Bundle }) {
       () => alive && setCheck("unavailable"),
     );
     const url = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }));
-    setDownload(url);
+    if (link.current) link.current.href = url;
     return () => {
       alive = false;
       URL.revokeObjectURL(url);
@@ -40,11 +40,9 @@ export function SealCheck({ bundle }: { bundle: Bundle }) {
         <p className={`${styles.hash} tabular`}>
           <span className="label">sha256</span> {bundle.sha256}
         </p>
-        {download ? (
-          <a className={styles.download} href={download} download={`noether-${bundle.run_id}.json`}>
-            Download JSON
-          </a>
-        ) : null}
+        <a ref={link} className={styles.download} download={`noether-${bundle.run_id}.json`}>
+          Download JSON
+        </a>
       </div>
     </div>
   );
