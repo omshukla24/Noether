@@ -95,7 +95,7 @@ def locate_and_propose(client, change, flip):
 def make_stages(**overrides) -> Stages:
     stages = Stages(read_intent=read_intent, pin_invariants=pin_invariants, judge_flips=judge_flips,
                     locate_and_propose=locate_and_propose, decide=decide, fix_is_proven=fix_is_proven,
-                    write_bundle=write_bundle, repair_invariants=None)
+                    write_bundle=write_bundle, repair_invariants=None, probe_invariants=None)
     return replace(stages, **overrides)
 
 

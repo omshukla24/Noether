@@ -34,6 +34,7 @@ class Caps:
     fix: bool = True
     repair_rounds: int = 2  # a second round takes only the checks still red after the first
     repair_batch: int = 4  # checks per repair call: a short answer is one the model can finish
+    max_probes: int = 6  # checks in the diff-guided second round, run only when the first finds no silent flip; 0 = off
 
 
 def _lazy(module: str, attr: str) -> Callable[..., Any]:
@@ -56,6 +57,7 @@ class Stages:
     read_intent: Callable[..., Any] = _read_intent
     pin_invariants: Callable[..., Any] = _lazy("noether.pin", "pin_invariants")
     repair_invariants: Callable[..., Any] | None = _lazy("noether.pin", "repair_invariants")
+    probe_invariants: Callable[..., Any] | None = _lazy("noether.pin", "probe_invariants")
     judge_flips: Callable[..., Any] = _lazy("noether.judge", "judge_flips")
     locate_and_propose: Callable[..., Any] = _lazy("noether.fix", "locate_and_propose")
     decide: Callable[..., Any] = _lazy("noether.verdict", "decide")
@@ -162,6 +164,7 @@ class _Check:
             self.do_base()
             self.do_head()
             self.do_judge()
+            self.do_probe()
         except _cap_errors() as exc:
             self.abort(f"cap hit during {self.stage}: {exc}")
         except RunnerError as exc:
@@ -192,7 +195,7 @@ class _Check:
         self.begin("pin")
         self.guard()
         got, dropped = self.stages.pin_invariants(self.client, self.run.change, max_items=self.caps.max_invariants)
-        kept, dropped = self.unique(list(got), list(dropped))
+        kept, dropped = self.unique(list(got), list(dropped), self.caps.max_invariants)
         self.guard()
         for inv in kept:
             self.event("pin", "progress", name=inv.name, claim=inv.claim,
@@ -200,16 +203,16 @@ class _Check:
         self.event("pin", "done", kept=len(kept), dropped=dropped)
         self.run.invariants, self.run.dropped = kept, dropped
 
-    def unique(self, invariants: list[Invariant], dropped: list[dict[str, str]]):
-        """Enforce the invariant cap and one pinned file per name."""
+    def unique(self, invariants: list[Invariant], dropped: list[dict[str, str]], cap: int, taken=()):
+        """Enforce the cap and one pinned file per name, also against names an earlier round used."""
         kept: list[Invariant] = []
-        seen: set[str] = set()
+        seen: set[str] = {pinned_filename(n) for n in taken}
         for inv in invariants:
             file = pinned_filename(inv.name)
             if file in seen:
                 dropped.append({"name": inv.name, "reason": "duplicate test name"})
-            elif len(kept) >= self.caps.max_invariants:
-                dropped.append({"name": inv.name, "reason": f"over the cap of {self.caps.max_invariants} tests"})
+            elif len(kept) >= cap:
+                dropped.append({"name": inv.name, "reason": f"over the cap of {cap} tests"})
             else:
                 seen.add(file)
                 kept.append(inv)
@@ -220,7 +223,16 @@ class _Check:
         self.guard()
         snap = self.base_snap = self.runner.prepare(self.run.change)
         self.run.snapshots.append(snap)
-        candidates = self.run.invariants
+        pinned, flaky, repaired = self.settle(snap, self.run.invariants)
+        # From here on run.invariants holds only tests proven green twice on base.
+        self.run.invariants = pinned
+        self.guard()
+        self.run.own_suite_base = self.runner.run_own_suite(snap)
+        self.event("base", "done", pinned=[i.name for i in pinned], flaky=flaky, repaired=repaired,
+                   own_suite=suite_data(self.run.own_suite_base), checkpoint=snap.image)
+
+    def settle(self, snap: Snapshot, candidates: list[Invariant]) -> tuple[list[Invariant], list[str], list[str]]:
+        """Run candidates twice on base with repair in between: (pinned, flaky, repaired). Results and drops go on the run."""
         pinned: list[Invariant] = []
         flaky: list[str] = []
         repaired: list[str] = []
@@ -239,12 +251,7 @@ class _Check:
                 else:
                     why = (a.output or b.output or "no output").strip().splitlines()[0][:200]
                     self.run.dropped.append({"name": inv.name, "reason": f"red on base: {why}"})
-        # From here on run.invariants holds only tests proven green twice on base.
-        self.run.invariants = pinned
-        self.guard()
-        self.run.own_suite_base = self.runner.run_own_suite(snap)
-        self.event("base", "done", pinned=[i.name for i in pinned], flaky=flaky, repaired=repaired,
-                   own_suite=suite_data(self.run.own_suite_base), checkpoint=snap.image)
+        return pinned, flaky, repaired
 
     def repair(self, snap: Snapshot, candidates: list[Invariant], first: dict[str, TestResult]
                ) -> tuple[list[Invariant], dict[str, TestResult], list[str]]:
@@ -304,23 +311,69 @@ class _Check:
 
     def do_judge(self) -> None:
         self.begin("judge")
-        flips = self.run.flips
-        if flips:
-            try:
-                judged = self.stages.judge_flips(self.client, self.run.intent, self.run.change, flips)
-            except _cap_errors():
-                raise
-            except _model_errors() as exc:
-                judged = [replace(f, kind="silent", reason=f"the judge was unavailable ({exc})") for f in flips]
-            by_name = {f.invariant.name: f for f in judged}
-            # A flip the judge did not answer for stays silent: fail closed.
-            self.run.flips = [by_name.get(f.invariant.name) or replace(f, kind="silent", reason="the judge gave no verdict")
-                              for f in flips]
-            for f in self.run.flips:
-                self.event("judge", "progress", name=f.invariant.name, kind=f.kind, reason=f.reason)
-            self.guard()
-        self.event("judge", "done", silent=[f.invariant.name for f in self.run.flips if f.kind == "silent"],
+        if self.run.flips:
+            self.run.flips = self.judge(self.run.flips)
+        self.judged()
+
+    def judge(self, flips: list[Flip]) -> list[Flip]:
+        try:
+            judged = self.stages.judge_flips(self.client, self.run.intent, self.run.change, flips)
+        except _cap_errors():
+            raise
+        except _model_errors() as exc:
+            judged = [replace(f, kind="silent", reason=f"the judge was unavailable ({exc})") for f in flips]
+        by_name = {f.invariant.name: f for f in judged}
+        # A flip the judge did not answer for stays silent: fail closed.
+        out = [by_name.get(f.invariant.name) or replace(f, kind="silent", reason="the judge gave no verdict") for f in flips]
+        for f in out:
+            self.event("judge", "progress", name=f.invariant.name, kind=f.kind, reason=f.reason)
+        self.guard()
+        return out
+
+    def judged(self, **extra: Any) -> None:
+        self.event("judge", "done", **extra, silent=[f.invariant.name for f in self.run.flips if f.kind == "silent"],
                    intended=[f.invariant.name for f in self.run.flips if f.kind == "intended"])
+
+    def do_probe(self) -> None:
+        """A second, diff-guided round when the first found no silent flip: Super now sees both sides of each hunk
+        and aims new checks at inputs where BASE and HEAD may differ. Each must still pass twice on BASE, so a check
+        that encodes HEAD behaviour is dropped, never surfaced. Its events reuse the stages it repeats (marked
+        probe=True, no second "start"). It only adds evidence: a failure is logged and the first round stands."""
+        if (self.caps.max_probes <= 0 or self.stages.probe_invariants is None
+                or any(f.kind == "silent" for f in self.run.flips)):
+            return
+        first = self.run.invariants
+        try:
+            self.stage = "pin"
+            self.guard()
+            got, dropped = self.stages.probe_invariants(self.client, self.run.change, first, max_items=self.caps.max_probes)
+            kept, dropped = self.unique(list(got), list(dropped), self.caps.max_probes,
+                                        taken=[*self.run.base_results, *(i.name for i in first)])
+            self.run.dropped.extend(dropped)
+            for inv in kept:
+                self.event("pin", "progress", probe=True, name=inv.name, claim=inv.claim,
+                           target_file=inv.target_file, target_symbol=inv.target_symbol)
+            self.event("pin", "done", probe=True, kept=len(kept), dropped=dropped)
+            self.stage = "base"
+            pinned, flaky, repaired = self.settle(self.base_snap, kept)
+            # pinned names both rounds: the cockpit marks every line it does not name as dropped
+            self.event("base", "done", probe=True, pinned=[i.name for i in first + pinned],
+                       added=[i.name for i in pinned], flaky=flaky, repaired=repaired)
+            if not pinned:
+                return
+            self.stage = "head"
+            results = self.tests("head", self.head_snap, pinned)
+            flips = [Flip(inv, results[inv.name].output) for inv in pinned if not results[inv.name].passed]
+            self.event("head", "done", probe=True, flips=[f.invariant.name for f in flips])
+            self.stage = "judge"
+            flips = self.judge(flips) if flips else []
+        except (RunnerError, *_cap_errors(), *_model_errors()) as exc:
+            self.event(self.stage, "progress", probe=True, error=f"the probe round stopped: {exc}")
+            return
+        self.run.invariants = [*first, *pinned]
+        self.run.head_results = {**self.run.head_results, **results}
+        self.run.flips = [*self.run.flips, *flips]
+        self.judged(probe=True)
 
     def do_fix(self) -> None:
         targets = [f for f in self.run.flips if f.kind == "silent"][: self.caps.max_fixes]
