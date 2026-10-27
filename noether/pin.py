@@ -68,9 +68,12 @@ Rules:
 - Pin BEHAVIOUR, not configuration. Every test must call the code and observe what it does. Never write a test that only reads a constant or an exported value and compares it to a literal: that checks a number, not a behaviour, and such tests are rejected.
 - Aim at what the changed lines influence, including through the related modules shown (callers, data, recorded inputs). A change is often only visible after many calls: drive the public API over several steps or inputs and assert on the outcome.
 - Prefer properties the BASE code guarantees over exact numbers you cannot compute by hand: conserved quantities (a value that stays the same across steps), bounds, monotonic trends, round trips, symmetry, idempotence, and the outcomes of any recorded inputs, examples or fixtures the repo ships (for example, a recorded run that finishes). Use exact values only when you can derive them from the BASE source with certainty.
-- Cover every range listed under "BASE lines this pull request rewrites". For each range, find what the code there decides (a branch, a guard, a default, an ordering, a clamp) and drive BOTH sides of that decision: the input where a guard holds and the input where it does not. A rewrite that drops or flips a guard is the change a repo's own tests miss, and only a check that reaches the other side of the guard sees it.
+- Cover every range listed under "BASE lines this pull request rewrites". For each range, find what the code there decides (a branch, a guard, a default, an ordering, a clamp, which of several candidates wins) and drive BOTH sides of that decision: the input where a guard holds and the input where it does not. A rewrite that drops or flips a guard is the change a repo's own tests miss, and only a check that reaches the other side of the guard sees it.
+- Probe edges, not only typical values: just below, at and just above every limit, unit boundary or cap; the far end of every option (the largest attempt number, the empty input, a page past the end); and options used together. A guarantee stated in a BASE comment or docstring ("never", "always", "at most", "is empty rather than an error") is a contract: write a check that tries to break it at its edge.
+- Make candidates distinguishable. When the code picks one of several (the first or the last duplicate, the smaller or the larger, which side wins a tie), give the candidates different identities (objects with other fields, strings that differ in case) so an assertion can tell which one was picked.
+- A change often touches only some inputs, and one hand-picked example misses it. A test may loop over a small table of 5 to 12 varied inputs (short and long, with digits, with capitals, with repeats, with the odd second letter) as long as it asserts one claim.
 - Mix: at least half of the tests must exercise behaviour across several calls or steps; the rest may be single-call checks of changed functions.
-- One behavioural claim per test, one to three asserts, small inputs, no snapshots of large outputs.
+- One behavioural claim per test, small inputs, no snapshots of large outputs.
 - Each test is its own ESM file run by node:test. Start it with exactly:
   import test from 'node:test';
   import assert from 'node:assert/strict';
@@ -79,7 +82,7 @@ Rules:
 - name: kebab-case, 3 to 60 characters, only a-z, 0-9 and '-'. Names must be unique.
 - claim: one plain sentence a code reviewer understands, such as "formatPrice rounds half up to two decimals".
 - target_file is the repo-relative path of the file under test, target_symbol the exported symbol it exercises.
-- Fewer good tests beat many weak ones. Return only the JSON object {"invariants": [...]}."""
+- Write as many distinct checks as the cap allows when the code supports them (at least 6 for any function with branches); each should probe a different class of input, and none should repeat another. Return only the JSON object {"invariants": [...]}."""
 
 
 def exports_of(source: str) -> list[str]:
