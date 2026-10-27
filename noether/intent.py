@@ -18,7 +18,6 @@ TAVILY_URL = "https://api.tavily.com/search"
 DEP_SECTIONS = ("dependencies", "devDependencies", "peerDependencies")
 MAX_BUMPS_SEARCHED = 5
 MAX_BODY_CHARS = 6000
-MAX_DIFF_CHARS = 30000
 
 INTENT_SCHEMA = {
     "type": "object",
@@ -92,7 +91,7 @@ def build_intent_messages(change: Change, bumps: list[DepBump]) -> list[dict]:
     parts = [f"Title: {change.title or '(none)'}", "", "Body:", clip(change.body or "(empty)", MAX_BODY_CHARS)]
     for b in bumps:
         parts += ["", f"Dependency bump: {b.name} {b.old} -> {b.new}"] + [f"  note: {n}" for n in b.notes]
-    parts += ["", "Diff:", clip(change.diff, MAX_DIFF_CHARS)]
+    # No diff: shown the code, Nano listed what the diff does as announced, and the judge then excused it.
     return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": "\n".join(parts)}]
 
 
