@@ -18,7 +18,8 @@ export function spells(typed: string, key: string, word = WORD): { typed: string
   return { typed: next, hit: next === word };
 }
 
-export function TheoremPlate({ onClose }: { onClose: () => void }) {
+export function TheoremPlate({ onClose, heading = false }: { onClose: () => void; heading?: boolean }) {
+  const Line = heading ? "h1" : "p";
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -29,7 +30,7 @@ export function TheoremPlate({ onClose }: { onClose: () => void }) {
     <div className={`${styles.plate} notebook`} role="dialog" aria-modal="true" aria-label="Noether's theorem" onClick={onClose}>
       <div className={styles.dim} aria-hidden="true" />
       <figure className={styles.figure}>
-        <p className={styles.theorem}>To every differentiable symmetry, a conserved quantity.</p>
+        <Line className={styles.theorem}>To every differentiable symmetry, a conserved quantity.</Line>
         <figcaption className={styles.cap}>
           <span className={styles.rule} aria-hidden="true" />
           Proof controls everything.
@@ -71,5 +72,5 @@ export function EmmyRoute() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [router]);
-  return <TheoremPlate onClose={() => router.push("/")} />;
+  return <TheoremPlate heading onClose={() => router.push("/")} />;
 }

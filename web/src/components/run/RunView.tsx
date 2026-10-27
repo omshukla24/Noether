@@ -77,7 +77,7 @@ function Suite({ label, s }: { label: string; s: SuiteSummary | null }) {
     <div className={styles.suiteCell}>
       <span className="label">{label}</span>
       <p className={`${styles.big} tabular`}>{s?.ran ? `${s.passed} passed` : "no suite"}</p>
-      <p className={styles.where}>{s?.ran ? `${s.failed} failed · exit ${s.exit_code}` : "the repo has no test script"}</p>
+      <p className={styles.where}>{s?.ran ? `${s.failed} failed · exit ${s.exit_code}` : "the repo has no suite to run"}</p>
     </div>
   );
 }
@@ -200,7 +200,7 @@ export function RunView({ bundle }: { bundle: Bundle }) {
               <Suite label="Base" s={bundle.own_suite.base} />
               <Suite label="Head" s={bundle.own_suite.head} />
             </div>
-            <p className={styles.muted}>The suite passing says nothing about the behaviour nobody tested. That gap is what the pinned checks cover.</p>
+            <p className={styles.muted}>The suite passing says nothing about behaviour nobody wrote a check for. That gap is what the pinned checks cover.</p>
           </Section>
 
           <Section id="sandbox" n={6} title="Sandbox">
