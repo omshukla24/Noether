@@ -1,0 +1,84 @@
+/* Noether design tokens. Light porcelain ground, indigo for conserved, vermilion for broken.
+   Display STIX Two Text, body Libre Franklin, evidence IBM Plex Mono. */
+
+:root {
+  /* --- Ground / surfaces --- */
+  --ground:        #F5F3ED;   /* page */
+  --ground-sunk:   #EFEDE5;   /* wells, insets */
+  --plate:         #FCFBF7;   /* the spectrograph plate / cards */
+  --plate-edge:    #FBF9F3;
+
+  /* --- Ink --- */
+  --ink:           #1A1B1E;   /* primary text: ~15:1 on ground (AAA) */
+  --muted:         #55575E;   /* secondary text: ~6.4:1 (AA) */
+  --faint:         #8C8A82;   /* captions, scale numerals: decorative only */
+  --line:          #DEDBD1;   /* hairlines, plate rules */
+  --hairline:      #E7E4DA;   /* faintest grid */
+
+  /* --- Signature accent: ultraviolet indigo (symmetry / conserved) --- */
+  --accent:        #4B3FE4;   /* the glow of a conserved invariant */
+  --accent-ink:    #2E259E;   /* accent used as small text: ~6:1 (AA) */
+  --accent-weak:   #E7E5FB;   /* accent wash / band bed */
+
+  /* --- Semantic --- */
+  --conserved:     #4B3FE4;   /* CONSERVED == the signature indigo locks in */
+  --conserved-bed: #ECEAFB;
+  --broken:        #D93A22;   /* BROKEN == a warm vermilion fracture */
+  --broken-ink:    #A82C18;   /* broken as small text: AA */
+  --broken-bed:    #FBE7E2;
+  --pending:       #9A8F7A;   /* running / unknown */
+
+  /* --- Spectrum (used ONLY inside the spectrograph viz, never in chrome) --- */
+  --spec-1:        #4B3FE4;   /* violet */
+  --spec-2:        #2E7BE4;   /* blue */
+  --spec-3:        #16A6B6;   /* cyan */
+  --spec-4:        #E4B23A;   /* amber */
+  --spec-5:        #D93A22;   /* vermilion (break edge) */
+
+  /* --- Type --- */
+  --font-display: "STIX Two Text", "Iowan Old Style", Georgia, serif;
+  --font-body:    "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  --fs-display:   clamp(2.4rem, 1.6rem + 3.2vw, 4rem);
+  --fs-h1:        clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
+  --fs-h2:        1.3rem;
+  --fs-lead:      1.075rem;
+  --fs-body:      0.975rem;
+  --fs-small:     0.85rem;
+  --fs-mono:      0.85rem;
+  --fs-micro:     0.72rem;   /* scale numerals, plate labels */
+
+  --lh-tight:     1.12;
+  --lh-body:      1.55;
+  --tracking-caps: 0.14em;   /* small caps labels */
+
+  /* --- Space (8-based, editorial rhythm) --- */
+  --s-1: 0.25rem;  --s-2: 0.5rem;  --s-3: 0.75rem;  --s-4: 1rem;
+  --s-5: 1.5rem;   --s-6: 2rem;    --s-7: 3rem;      --s-8: 4.5rem;  --s-9: 7rem;
+
+  /* --- Radii (restrained: editorial, NOT rounded-lg on everything) --- */
+  --r-plate: 3px;   /* plates / cards: near-square, like a photographic plate */
+  --r-chip:  2px;
+  --r-seal:  50%;
+
+  /* --- Borders --- */
+  --bd-hair: 1px solid var(--line);
+  --bd-faint: 1px solid var(--hairline);
+
+  /* --- Elevation: hairlines over shadows (editorial). One soft lift max. --- */
+  --lift: 0 1px 0 rgba(26,27,30,0.03), 0 12px 32px -20px rgba(26,27,30,0.18);
+
+  /* --- Motion: instrument-calm. The break is the ONLY drama. --- */
+  --ease-settle: cubic-bezier(0.22, 0.61, 0.36, 1);   /* lines lock into place */
+  --ease-snap:   cubic-bezier(0.85, 0, 0.25, 1);      /* the fracture */
+  --dur-fast: 140ms;
+  --dur:      280ms;
+  --dur-slow: 620ms;
+  --dur-seal: 900ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; --dur-seal: 0ms; }
+  /* No fracture animation, no autoplay loops: show the static split + colour. */
+}
