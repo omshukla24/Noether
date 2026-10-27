@@ -102,3 +102,20 @@ a { color: var(--accent-ink); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
 }
+
+/* Page slit: on a route change the old page closes to a vertical line over ink and the next opens out of it. */
+::view-transition-group(.slit) { background: var(--ink); }
+::view-transition-old(.slit) { animation: slit-close 380ms var(--ease-snap) both; }
+::view-transition-new(.slit) { animation: slit-open 620ms var(--ease-settle) 300ms both; }
+::view-transition { pointer-events: none; }
+@keyframes slit-close {
+  70% { clip-path: inset(0 calc(50% - 1px) 0 calc(50% - 1px)); filter: brightness(1.6); }
+  to { clip-path: inset(0 calc(50% - 1px) 0 calc(50% - 1px)); filter: brightness(1.6); opacity: 0.6; }
+}
+@keyframes slit-open {
+  from { clip-path: inset(0 calc(50% - 1px) 0 calc(50% - 1px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.slit), ::view-transition-new(.slit) { animation: none; }
+  ::view-transition-group(.slit) { background: none; }
+}
