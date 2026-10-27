@@ -308,7 +308,8 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
 
     if (snap || ++hudTick % 4 === 0) {
       opts.onHud({
-        frame: clamp(t, 0, total),
+        // in the dive the ghosts show their freeze frames, while t stops wherever it was (often still in the lead-in)
+        frame: dive > 0.02 ? Math.max(ghosts.base.freeze, ghosts.head.freeze) : clamp(t, 0, total),
         total,
         base,
         head,
