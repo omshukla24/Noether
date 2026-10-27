@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GAP, formatChange, ghostRun, type Build } from "@/hopper/sim";
 import { prefersReducedMotion } from "@/motion/env.js";
@@ -42,18 +42,9 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
   const canvas = useRef<HTMLCanvasElement>(null);
   const game = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HopperScene | null>(null);
-  const hud = useRef<Record<string, HTMLElement | null>>({});
-  const tags = useRef<Record<string, HTMLElement | null>>({});
   const [playing, setPlaying] = useState(false);
   const [reduced, setReduced] = useState(false);
-  const bind = (key: string) => (el: HTMLElement | null) => {
-    hud.current[key] = el;
-  };
-  const tag = (key: string) => (el: HTMLElement | null) => {
-    tags.current[key] = el;
-  };
-  const onPlaying = useCallback((on: boolean) => setPlaying(on), []);
-  const pad = useHopperControls(game, sceneRef, onPlaying);
+  const pad = useHopperControls(game, sceneRef, setPlaying);
   const jf = runs.fixed.jump!;
   const jh = runs.head.jump!;
 
@@ -69,9 +60,10 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
     let io: IntersectionObserver | null = null;
     let trigger: ScrollTrigger | null = null;
     const write = (key: string, text: string) => {
-      const el = hud.current[key];
+      const el = root.querySelector<HTMLElement>(`[data-hud="${key}"]`);
       if (el && el.textContent !== text) el.textContent = text;
     };
+    const tag = (key: string) => root.querySelector<HTMLElement>(`[data-tag="${key}"]`)!;
     const onHud = (h: Hud) => {
       write("x", n2(h.player.x));
       write("p", n2(h.player.p));
@@ -80,14 +72,13 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
 
     loadHopper().then(({ createHopperScene }) => {
       if (disposed) return;
-      const t = tags.current;
       scene = createHopperScene(cv, {
         palette: readPalette(),
         reduced: still,
         ghosts: ["head", "fixed"],
         build: "fixed",
         diveShift: DIVE_SHIFT,
-        labels: { base: t.head!, head: t.fixed!, you: t.you!, gap: t.gap!, baseMark: t.headMark!, headMark: t.fixedMark! },
+        labels: { base: tag("head"), head: tag("fixed"), you: tag("you"), gap: tag("gap"), baseMark: tag("headMark"), headMark: tag("fixedMark") },
         onHud,
       });
       sceneRef.current = scene;
@@ -142,12 +133,12 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
         </div>
 
         <div className={hero.tags} aria-hidden="true">
-          <span ref={tag("head")} className={`${hero.tag} ${hero.tagHead}`}>HEAD</span>
-          <span ref={tag("fixed")} className={`${hero.tag} ${hero.tagBase}`}>FIXED</span>
-          <span ref={tag("you")} className={hero.tag}>YOU · FIXED</span>
-          <span ref={tag("gap")} className={hero.measure}>gap {GAP.width.toFixed(2)}</span>
-          <span ref={tag("headMark")} className={`${hero.measure} ${hero.mHead}`}>head {signed(jh.margin)}</span>
-          <span ref={tag("fixedMark")} className={`${hero.measure} ${hero.mBase}`}>fixed {signed(jf.margin)}</span>
+          <span data-tag="head" className={`${hero.tag} ${hero.tagHead}`}>HEAD</span>
+          <span data-tag="fixed" className={`${hero.tag} ${hero.tagBase}`}>FIXED</span>
+          <span data-tag="you" className={hero.tag}>YOU · FIXED</span>
+          <span data-tag="gap" className={hero.measure}>gap {GAP.width.toFixed(2)}</span>
+          <span data-tag="headMark" className={`${hero.measure} ${hero.mHead}`}>head {signed(jh.margin)}</span>
+          <span data-tag="fixedMark" className={`${hero.measure} ${hero.mBase}`}>fixed {signed(jf.margin)}</span>
         </div>
 
         <div className={styles.copy}>
@@ -230,8 +221,8 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
         </aside>
 
         <p className={styles.you} data-on={playing || undefined} aria-live="off">
-          x <b ref={bind("x")} className="tabular">0.00</b> · p <b ref={bind("p")} className="tabular">0.00</b> ·{" "}
-          <span ref={bind("tries")}>0 tries · 0 cleared the gap</span>
+          x <b data-hud="x" className="tabular">0.00</b> · p <b data-hud="p" className="tabular">0.00</b> ·{" "}
+          <span data-hud="tries">0 tries · 0 cleared the gap</span>
         </p>
 
         <div className={`${hero.pad} ${styles.pad}`} aria-hidden="true">

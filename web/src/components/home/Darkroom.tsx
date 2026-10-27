@@ -34,7 +34,7 @@ export function Darkroom({ plates, seconds }: DarkroomProps) {
     if (!root || !el) return;
     const paint = (fan: number) => {
       el.style.setProperty("--fan", String(fan));
-      counters.current.total && (counters.current.total.textContent = fmt(seconds * fan));
+      if (counters.current.total) counters.current.total.textContent = fmt(seconds * fan);
       plates.forEach((p) => {
         const c = counters.current[p.key];
         if (c && p.stageSeconds !== null) c.textContent = fmt(p.stageSeconds * fan);

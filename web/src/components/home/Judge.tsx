@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { gsap } from "gsap";
 import { JUDGE } from "@/motion/config.js";
 import { prefersReducedMotion } from "@/motion/env.js";
@@ -14,10 +14,14 @@ interface JudgeProps {
   announced: string[];
 }
 
-// Meta's published result for just-in-time catching tests, cited as the reason a judge is needed.
+// Meta's published result for just-in-time catching, cited as the reason a judge is needed.
 const META = { catches: 41, real: 8, paper: "arXiv 2601.22832" };
 
 const LABEL: Record<Truth, string> = { intended: "Intended", silent: "Silent" };
+
+// Dragging needs a fine pointer and motion; touch and reduced motion get the buttons and arrow keys.
+const noSubscription = () => () => {};
+const dragAllowed = () => !prefersReducedMotion() && !window.matchMedia("(pointer: coarse)").matches;
 
 // 05 Judge: the visitor rules on two real flips before Nemotron Ultra's recorded ruling is shown.
 export function Judge({ cases, announced }: JudgeProps) {
@@ -28,7 +32,7 @@ export function Judge({ cases, announced }: JudgeProps) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<(Truth | null)[]>(() => cases.map(() => null));
   const [over, setOver] = useState<Truth | null>(null);
-  const [canDrag, setCanDrag] = useState(false);
+  const canDrag = useSyncExternalStore(noSubscription, dragAllowed, () => false);
 
   const current = cases[index];
   const answer = answers[index];
@@ -36,7 +40,6 @@ export function Judge({ cases, announced }: JudgeProps) {
   const matched = answers.filter((a, i) => a === cases[i].truth).length;
 
   useEffect(() => {
-    setCanDrag(!prefersReducedMotion() && !window.matchMedia("(pointer: coarse)").matches);
     const el = card.current;
     return () => {
       if (el) gsap.killTweensOf(el);
@@ -209,7 +212,7 @@ export function Judge({ cases, announced }: JudgeProps) {
       </div>
 
       <p className={styles.why}>
-        Why a judge at all: Meta&apos;s just-in-time catching tests reported <b className="tabular">{META.catches}</b> catches, only{" "}
+        Why a judge at all: Meta&apos;s just-in-time catching checks reported <b className="tabular">{META.catches}</b> catches, only{" "}
         <b className="tabular">{META.real}</b> of them real ({META.paper}). A failing check is not yet a bug. Someone has to say
         whether the change was meant.
       </p>
