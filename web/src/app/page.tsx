@@ -1,8 +1,29 @@
+import { Collapse } from "@/components/home/Collapse";
+import { Darkroom } from "@/components/home/Darkroom";
+import { Hero } from "@/components/home/Hero";
+import { Judge } from "@/components/home/Judge";
+import { PrCard } from "@/components/home/PrCard";
+import { Preloader } from "@/components/home/Preloader";
+import { Reprove } from "@/components/home/Reprove";
+import { Route } from "@/components/home/Route";
+import { Seal } from "@/components/home/Seal";
+import { Slit } from "@/components/home/Slit";
+import { RUN } from "@/lib/run";
+
+// The home page tells one sealed run in order: observe, pin, expose, measure, judge, re-prove, route, seal.
 export default function Home() {
   return (
-    <section data-route="observe" data-label="01 Observe" data-theme="light" className="notebook" style={{ minHeight: "100vh", padding: "120px 40px" }}>
-      <p className="label">01 · Observe</p>
-      <h1 style={{ fontSize: "var(--fs-display)", maxWidth: "14ch" }}>CI is green. The jump is broken.</h1>
-    </section>
+    <>
+      <Preloader />
+      <Hero ownSuitePassed={RUN.own_suite.base?.passed ?? 0} />
+      <PrCard />
+      <Slit />
+      <Darkroom />
+      <Collapse />
+      <Judge />
+      <Reprove />
+      <Route />
+      <Seal />
+    </>
   );
 }

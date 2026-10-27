@@ -8,6 +8,10 @@ import { padPercent } from './math.js';
 
 const HARD_CAP_MS = 4000;
 
+/**
+ * @param {HTMLElement | null} el
+ * @param {{ tasks?: Promise<unknown>[], minMs?: number }} [options]
+ */
 export function runPreloader(el, { tasks = [], minMs = 900 } = {}) {
   if (!el) return Promise.resolve();
   const bar = el.querySelector('[data-preload-bar]');
@@ -22,6 +26,7 @@ export function runPreloader(el, { tasks = [], minMs = 900 } = {}) {
   let done = 0;
 
   const render = () => {
+    el.style.setProperty('--p', shown.v.toFixed(3));
     if (bar) bar.style.transform = `scaleX(${shown.v})`;
     if (pct) pct.textContent = padPercent(shown.v);
     if (word) word.textContent = words[Math.min(words.length - 1, Math.floor(shown.v * words.length))];
