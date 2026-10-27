@@ -304,7 +304,7 @@ export function Hero({ ownSuitePassed }: HeroProps) {
           </dl>
         </aside>
 
-        <aside className={styles.you} aria-label="Your run" data-on={playing || undefined}>
+        <aside className={styles.you} aria-label="Your run">
           <p className={styles.hudHead}>
             <span>you · {BUILD_NAME[build].toLowerCase()}</span>
           </p>

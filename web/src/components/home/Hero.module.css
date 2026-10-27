@@ -225,10 +225,7 @@
 .you {
   right: clamp(16px, 4vw, 56px);
   min-width: 220px;
-  opacity: 0.72;
-  transition: opacity var(--dur) var(--ease-settle);
 }
-.you[data-on] { opacity: 1; }
 .tries { color: var(--ink); }
 .toast { min-height: 1.7em; color: var(--broken-ink); }
 

@@ -220,7 +220,7 @@ export function Reprove({ diff, file, line, invariant, greenOthers, suitePassed,
           </ul>
         </aside>
 
-        <p className={styles.you} data-on={playing || undefined} aria-live="off">
+        <p className={styles.you} aria-live="off">
           x <b data-hud="x" className="tabular">0.00</b> · p <b data-hud="p" className="tabular">0.00</b> ·{" "}
           <span data-hud="tries">0 tries · 0 cleared the gap</span>
         </p>

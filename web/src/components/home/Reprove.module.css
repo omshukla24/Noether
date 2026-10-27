@@ -83,8 +83,8 @@
 .diff pre { margin: 0; padding: 10px 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.7; outline-offset: -2px; }
 .diff pre code { display: block; width: max-content; min-width: 100%; font: inherit; }
 .row { display: block; padding: 0 14px 0 6px; white-space: pre; }
-.row i { display: inline-block; width: 3.2ch; margin-right: 1ch; text-align: right; font-style: normal; color: var(--faint); user-select: none; }
-.row b { display: inline-block; width: 2ch; font-weight: 400; color: var(--faint); user-select: none; }
+.row i { display: inline-block; width: 3.2ch; margin-right: 1ch; text-align: right; font-style: normal; color: var(--muted); user-select: none; }
+.row b { display: inline-block; width: 2ch; font-weight: 400; color: var(--muted); user-select: none; }
 .add { background: var(--conserved-bed); }
 .add b { color: var(--accent-ink); }
 .del { background: var(--broken-bed); }
@@ -130,10 +130,7 @@
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   color: var(--muted);
-  opacity: 0.72;
-  transition: opacity var(--dur) var(--ease-settle);
 }
-.you[data-on] { opacity: 1; }
 .you b { color: var(--ink); font-weight: 500; }
 
 /* reduced motion: one still frame of the gap, no runway */
