@@ -104,3 +104,48 @@ def test_counts_from_mocha_and_jest():
 
 def test_counts_default_to_zero_when_unrecognised():
     assert parse_counts("something else entirely") == (0, 0)
+
+
+# A file that dies on import is reported by node as one bare line; the sandbox script appends what node printed.
+CRASH_XML = (
+    '<?xml version="1.0"?><testsuites>'
+    '<testcase name="a.test.mjs" file="/w/repo/.noether/pinned/crash.test.mjs"><failure type="testCodeFailure" '
+    'message="test failed">[Error: test failed] { code: \'ERR_TEST_FAILURE\', failureType: \'testCodeFailure\', '
+    "cause: 'test failed', exitCode: 1, signal: null }</failure></testcase>"
+    '<testcase name="b.test.mjs" file="/w/repo/.noether/pinned/wrong.test.mjs"><failure message="Expected values to be '
+    'strictly equal">8 !== 0</failure></testcase></testsuites>\n'
+)
+IMPORT_ERROR = "SyntaxError: The requested module '../../src/x.js' does not provide an export named 'nope'"
+
+
+def test_a_bare_file_crash_gets_the_error_node_printed_for_that_file():
+    logs = f"\n@@NOETHER-LOG .noether/pinned/crash.test.mjs\n{IMPORT_ERROR}\n    at ModuleJob.run\n"
+
+    result = parse_junit(CRASH_XML + logs, ["crash"])["crash"]
+
+    assert not result.passed and IMPORT_ERROR in result.output and "ERR_TEST_FAILURE" not in result.output
+
+
+def test_a_real_assertion_failure_keeps_its_own_message_even_when_a_log_follows():
+    logs = "\n@@NOETHER-LOG .noether/pinned/wrong.test.mjs\nsomething else\n"
+
+    result = parse_junit(CRASH_XML + logs, ["wrong"])["wrong"]
+
+    assert "8 !== 0" in result.output and "something else" not in result.output
+
+
+def test_each_crash_gets_only_its_own_log():
+    xml = CRASH_XML.replace("wrong.test.mjs", "other.test.mjs").replace("8 !== 0", "[Error: test failed] { exitCode: 1 }")
+    logs = ("\n@@NOETHER-LOG .noether/pinned/crash.test.mjs\nfirst error\n"
+            "\n@@NOETHER-LOG .noether/pinned/other.test.mjs\nsecond error\n")
+
+    results = parse_junit(xml + logs, ["crash", "other"])
+
+    assert "first error" in results["crash"].output and "second error" not in results["crash"].output
+    assert "second error" in results["other"].output
+
+
+def test_a_bare_crash_without_a_log_stays_as_node_reported_it():
+    result = parse_junit(CRASH_XML, ["crash"])["crash"]
+
+    assert not result.passed and "exitCode: 1" in result.output

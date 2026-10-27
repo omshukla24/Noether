@@ -7,13 +7,20 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
+from dataclasses import replace
 
 from noether.model import TestResult
 
 MAX_FAILURE_CHARS = 4096
 PINNED_SUFFIX = ".test.mjs"
 
+FILE_LOG_MARK = "@@NOETHER-LOG "
+
 _UNSAFE = re.compile(r"[^A-Za-z0-9_.-]")
+# With a process per test file, node reports a file that dies before running a check (bad import, syntax error)
+# as this one line and drops the real error, which only the file's own stderr carries.
+_BARE_CRASH = re.compile(r"\[Error: test failed\] \{[^}]*exitCode")
+_FILE_LOG = re.compile(rf"(?ms)^{re.escape(FILE_LOG_MARK)}(\S+)\n(.*?)(?=^{re.escape(FILE_LOG_MARK)}|\Z)")
 # Node prints its summary as "ℹ pass 6" (spec reporter) or "# pass 6" (tap).
 _COUNT = r"(?m)^\s*(?:ℹ|#)\s+{word}\s+(\d+)\s*$"
 _MOCHA = r"(?m)^\s*(\d+)\s+{word}\b"
@@ -34,11 +41,16 @@ def parse_junit(xml: str, names: list[str]) -> dict[str, TestResult]:
     is failed with "did not run", so a crashed run can never look green."""
     wanted = {pinned_filename(n): n for n in names}
     cases, problem = _read_cases(xml)
+    logs = {_basename(path): text.strip() for path, text in _FILE_LOG.findall(xml[xml.rfind("</testsuites>"):])}
     seen: dict[str, list[TestResult]] = {}
     for case in cases:
-        name = wanted.get(_basename(case.get("file", "")))
+        file = _basename(case.get("file", ""))
+        name = wanted.get(file)
         if name is not None:
-            seen.setdefault(name, []).append(_case_result(name, case))
+            result = _case_result(name, case)
+            if not result.passed and _BARE_CRASH.search(result.output) and logs.get(file):
+                result = replace(result, output=tail("the test file stopped before its checks ran. node printed:\n" + logs[file]))
+            seen.setdefault(name, []).append(result)
 
     out: dict[str, TestResult] = {}
     for name in names:

@@ -313,6 +313,30 @@ def test_fake_sandbox_run_tests_uploads_files_and_parses_the_report():
     assert passed(results) == {"a_pass": True, "b_fail": False, "e_missing": False}
 
 
+def test_red_files_run_again_alone_so_a_crash_is_not_just_test_failed():
+    sandbox = FakeSandbox([(0, REAL_REPORT, "")])
+    tests = [m.Invariant("a_pass", "c", "f", "s", "// a")]
+
+    ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), tests)
+
+    shell = sandbox.runs[0]["shell"]
+    assert 'if [ "$rc" != 0 ]' in shell and "@@NOETHER-LOG" in shell and 'node "$f"' in shell
+
+
+def test_the_crash_log_a_sandbox_sends_back_reaches_the_result():
+    report = (
+        '<?xml version="1.0"?><testsuites><testcase name="x" file="/w/repo/.noether/pinned/boom.test.mjs">'
+        '<failure message="test failed">[Error: test failed] { cause: \'test failed\', exitCode: 1, signal: null }'
+        "</failure></testcase></testsuites>\n\n@@NOETHER-LOG .noether/pinned/boom.test.mjs\n"
+        "SyntaxError: no export named nope\n"
+    )
+    sandbox = FakeSandbox([(0, report, "")])
+
+    result = ContreeRunner(client=sandbox).run_tests(m.Snapshot("snap", "head"), [m.Invariant("boom", "c", "f", "s", "//")])[0]
+
+    assert not result.passed and "no export named nope" in result.output
+
+
 def test_run_tests_with_nothing_to_run_does_not_start_a_sandbox():
     sandbox = FakeSandbox()
 
