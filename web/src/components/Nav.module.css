@@ -83,6 +83,10 @@
   pointer-events: none;
 }
 
+@media (max-width: 960px) {
+  .crumb { display: none; }
+}
+
 @media (max-width: 720px) {
   .crumb { display: none; }
   .link { display: none; }

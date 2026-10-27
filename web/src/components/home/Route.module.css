@@ -1,0 +1,62 @@
+/* 07 Route: one beam, three prisms drawn to the tokens each model handled. */
+.route {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: var(--s-9) clamp(16px, 4vw, 56px);
+}
+.head { max-width: 62ch; }
+.title { margin-top: var(--s-3); font-size: clamp(2.2rem, 1.2rem + 3vw, 3.8rem); line-height: 0.98; letter-spacing: -0.035em; }
+.title em { font-style: italic; color: var(--accent-ink); }
+.lede { margin: var(--s-4) 0 0; color: var(--muted); font-size: var(--fs-lead); max-width: 54ch; }
+
+.svg { display: block; width: 100%; height: auto; margin: var(--s-7) 0 var(--s-6); overflow: visible; }
+.beam { stroke: var(--ink); stroke-width: 2; }
+.glass {
+  fill: var(--plate);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  transition: fill var(--dur) var(--ease-settle), stroke var(--dur) var(--ease-settle);
+}
+.prism { cursor: default; outline: none; }
+.prism:hover .glass, .prism:focus-visible .glass { fill: var(--accent-weak); stroke: var(--accent); }
+.prism:focus-visible .glass { stroke-width: 3; }
+.fan line { stroke-width: 1.5; opacity: 0.9; }
+.s1 { stroke: var(--spec-1); }
+.s2 { stroke: var(--spec-2); }
+.s3 { stroke: var(--spec-3); }
+.s4 { stroke: var(--spec-4); }
+.s5 { stroke: var(--spec-5); }
+.ruler line { stroke: var(--faint); stroke-width: 1; }
+.ruler text, .tip, .name { font-family: var(--font-mono); fill: var(--muted); }
+.ruler text { font-size: 13px; letter-spacing: 0.04em; }
+.name { font-family: var(--font-display); font-size: 30px; fill: var(--ink); letter-spacing: -0.02em; }
+.tip { font-size: 13px; letter-spacing: 0.06em; opacity: 0; transition: opacity var(--dur) var(--ease-settle); }
+.prism:hover .tip, .prism:focus-visible .tip { opacity: 1; }
+
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+.table th, .table td { padding: var(--s-3) var(--s-4) var(--s-3) 0; text-align: left; vertical-align: top; border-bottom: var(--bd-faint); }
+.table thead th { font: 400 var(--fs-micro) / 1.2 var(--font-mono); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--muted); border-bottom: var(--bd-hair); }
+.table tfoot th, .table tfoot td { border-bottom: 0; border-top: var(--bd-hair); padding-top: var(--s-4); font-weight: 400; }
+.table tfoot th { font: 400 var(--fs-micro) / 1.2 var(--font-mono); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--muted); }
+.num { text-align: right !important; padding-right: 0 !important; font-family: var(--font-mono); font-size: var(--fs-micro); }
+.model { font-weight: 400 !important; }
+.short { display: block; font-family: var(--font-display); font-size: 1.4rem; letter-spacing: -0.02em; line-height: 1.1; }
+.id { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); overflow-wrap: anywhere; }
+.row { transition: background-color var(--dur) var(--ease-settle); }
+.est { font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--muted); margin-right: var(--s-2); }
+.note { margin: var(--s-4) 0 0; font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--muted); }
+
+/* hovering or focusing a prism lights the matching row */
+.route:has(.prism[data-k="0"]:hover, .prism[data-k="0"]:focus-visible) .row[data-k="0"],
+.route:has(.prism[data-k="1"]:hover, .prism[data-k="1"]:focus-visible) .row[data-k="1"],
+.route:has(.prism[data-k="2"]:hover, .prism[data-k="2"]:focus-visible) .row[data-k="2"] { background: var(--accent-weak); }
+
+@media (max-width: 720px) {
+  .table, .table tbody, .table tr, .table th, .table td, .table tfoot { display: block; }
+  .table thead { display: none; }
+  .table tr { padding: var(--s-3) 0; border-bottom: var(--bd-faint); }
+  .table th, .table td { border: 0; padding: 2px 0; }
+  .num { text-align: left !important; }
+  .num::before { content: attr(data-l); }
+  .tip { opacity: 1; font-size: 11px; }
+}

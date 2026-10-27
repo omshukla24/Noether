@@ -7,8 +7,11 @@ import styles from "./Nav.module.css";
 
 const LINKS = [
   { href: "/#observe", label: "Observe", route: "observe" },
+  { href: "/#pin", label: "Pin", route: "pin" },
+  { href: "/#expose", label: "Expose", route: "expose" },
   { href: "/#measure", label: "Measure", route: "measure" },
   { href: "/#judge", label: "Judge", route: "judge" },
+  { href: "/#reprove", label: "Re-prove", route: "reprove" },
   { href: "/check", label: "Check a PR", route: "check" },
 ];
 

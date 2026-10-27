@@ -1,0 +1,25 @@
+.ruler {
+  position: relative;
+  height: 28px;
+  color: var(--muted);
+}
+.ticks {
+  display: block;
+  width: 100%;
+  height: 10px;
+  overflow: visible;
+}
+.ticks line {
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.numeral {
+  position: absolute;
+  top: 14px;
+  translate: -50% 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.numeral:first-of-type { translate: 0 0; }

@@ -1,0 +1,221 @@
+/* 03 Expose: ink room, three snapshot plates in CSS 3D. --fan (0 stacked, 1 fanned) is set from scroll. */
+.runway {
+  --fan: 0;
+  --on-ok: color-mix(in srgb, var(--accent) 42%, var(--ground));
+  --on-bad: color-mix(in srgb, var(--broken) 58%, var(--ground));
+  --on-mute: color-mix(in srgb, var(--ground) 62%, var(--ink));
+  --raise: color-mix(in srgb, var(--ground) 6%, var(--ink));
+  --edge: color-mix(in srgb, var(--ground) 20%, var(--ink));
+  --pw: clamp(240px, 21vw, 310px);
+  --ph: clamp(330px, 46vh, 420px);
+  --step: calc(var(--pw) * 1.12);
+  position: relative;
+  height: 200vh;
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(84px, 12vh, 120px) clamp(16px, 4vw, 56px) clamp(24px, 4vh, 40px);
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-2) var(--s-7);
+  align-items: end;
+}
+.intro :global(.label) { grid-column: 1 / -1; color: var(--on-mute); }
+.title {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: clamp(2rem, 1rem + 2.6vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  max-width: 16ch;
+}
+.deck {
+  grid-column: 1;
+  grid-row: 3;
+  margin: var(--s-2) 0 0;
+  max-width: 54ch;
+  color: var(--on-mute);
+}
+.total {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  margin: 0;
+  display: grid;
+  justify-items: end;
+  transition: opacity var(--dur) var(--ease-settle);
+}
+.total b {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 2rem + 2.4vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.total span { font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--on-mute); }
+
+.scene {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  perspective: 1800px;
+  perspective-origin: 50% 35%;
+  transition: transform var(--dur-slow) var(--ease-settle);
+}
+.stage[data-open] .scene { transform: translateX(-16vw) scale(0.8); }
+.stage[data-open] .total,
+.stage[data-open] .deck { opacity: 0.12; }
+
+.rig {
+  position: relative;
+  width: var(--pw);
+  height: var(--ph);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform-style: preserve-3d;
+  transform: rotateX(5deg) rotateY(calc(-9deg * (1 - var(--fan))));
+}
+.slot {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.base { transform: translate3d(calc(var(--fan) * var(--step) * -1), 0, 0) rotateY(calc(var(--fan) * 13deg)); }
+.head { transform: translate3d(0, calc((1 - var(--fan)) * -16px), calc((1 - var(--fan)) * -42px)); }
+.fix { transform: translate3d(calc(var(--fan) * var(--step)), calc((1 - var(--fan)) * -32px), calc((1 - var(--fan)) * -84px)) rotateY(calc(var(--fan) * -13deg)); }
+
+.plate {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: 20px 20px 16px;
+  text-align: left;
+  font: inherit;
+  color: var(--ground);
+  background: var(--raise);
+  border: 1px solid var(--edge);
+  border-top-width: 3px;
+  border-radius: var(--r-plate);
+  box-shadow: 0 24px 40px -28px var(--ink);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease-settle), translate var(--dur) var(--ease-settle);
+}
+.plate::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--ground) 9%, var(--ink));
+  border-radius: var(--r-chip);
+  pointer-events: none;
+}
+.base .plate { border-top-color: var(--accent); }
+.head .plate { border-top-color: var(--broken); }
+.fix .plate { border-top-color: var(--accent); }
+.plate:hover,
+.plate[aria-expanded="true"] { border-color: color-mix(in srgb, var(--ground) 55%, var(--ink)); translate: 0 -4px; }
+.plate:focus-visible { outline: 2px solid var(--ground); outline-offset: 4px; }
+
+.idx { font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--on-mute); }
+.plateTitle { font-family: var(--font-display); font-size: 1.55rem; line-height: 1.05; letter-spacing: -0.02em; }
+.role { font-size: var(--fs-small); color: var(--on-mute); max-width: 24ch; }
+.id { position: relative; margin-top: auto; display: grid; gap: 2px; min-height: 3.4em; }
+.id code { font-family: var(--font-mono); font-size: 1.05rem; letter-spacing: 0.04em; }
+.id .full { font-size: var(--fs-micro); letter-spacing: 0; color: var(--on-mute); overflow-wrap: anywhere; opacity: 0; transition: opacity var(--dur) var(--ease-settle); }
+.plate:hover .full,
+.plate:focus-visible .full,
+.plate[aria-expanded="true"] .full { opacity: 1; }
+
+.exposure { display: grid; gap: 6px; padding-top: var(--s-2); }
+.bar { display: block; height: 4px; background: color-mix(in srgb, var(--ground) 12%, var(--ink)); }
+.bar span { display: block; height: 100%; transform-origin: left; transform: scaleX(var(--fan)); }
+.base .bar span,
+.fix .bar span { background: color-mix(in srgb, var(--accent) 72%, var(--ground)); }
+.head .bar span { background: color-mix(in srgb, var(--broken) 80%, var(--ground)); }
+.secs { font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: 0.04em; color: var(--on-mute); }
+.secs b { font-weight: 500; color: var(--ground); font-size: 0.95rem; }
+.openHint { font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--on-mute); }
+.plate:hover .openHint { color: var(--ground); }
+
+/* the open plate */
+.tray {
+  position: absolute;
+  top: 64px;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 94vw);
+  padding: 28px clamp(16px, 2vw, 28px);
+  overflow-y: auto;
+  background: var(--raise);
+  border-left: 1px solid var(--edge);
+  transform: translateX(104%);
+  visibility: hidden;
+  transition: transform var(--dur-slow) var(--ease-settle), visibility 0s linear var(--dur-slow);
+  z-index: 3;
+}
+.tray[data-open] { transform: none; visibility: visible; transition-delay: 0s; }
+.tray :global(.label) { color: var(--on-mute); }
+.trayTitle { margin-top: var(--s-2); font-size: 2rem; outline: none; }
+.trayRole { margin: var(--s-2) 0 var(--s-4); color: var(--on-mute); font-size: var(--fs-small); }
+.closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ground);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.closeBtn:hover { border-color: var(--ground); }
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.72rem; }
+.table th,
+.table td { padding: 7px 8px 7px 0; text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--ground) 10%, var(--ink)); font-weight: 400; vertical-align: top; }
+.table thead th { white-space: nowrap; color: var(--on-mute); text-transform: uppercase; letter-spacing: var(--tracking-caps); font-size: var(--fs-micro); }
+.table tbody th code { font: inherit; overflow-wrap: anywhere; }
+.table td { white-space: nowrap; }
+.ok { color: var(--on-ok); }
+.bad { color: var(--on-bad); }
+.mute { color: var(--on-mute); }
+.note { margin: var(--s-4) 0 0; font-family: var(--font-mono); font-size: var(--fs-micro); letter-spacing: 0.04em; color: var(--on-mute); }
+
+/* reduced motion and phones: the stack is already fanned, plates sit in a column */
+.still { height: auto; }
+.still .stage { position: relative; height: auto; min-height: 100vh; }
+
+@media (max-width: 760px) {
+  .runway { height: auto; --pw: 100%; --ph: auto; }
+  .stage { position: relative; height: auto; overflow: visible; padding-top: 88px; padding-bottom: 48px; }
+  .intro { grid-template-columns: minmax(0, 1fr); }
+  .total { grid-column: 1; grid-row: auto; justify-items: start; margin-top: var(--s-4); }
+  .scene { display: block; perspective: none; margin-top: var(--s-6); }
+  .stage[data-open] .scene { transform: none; }
+  .rig { width: 100%; height: auto; display: grid; gap: var(--s-4); transform: none; }
+  .slot { position: static; transform: none !important; }
+  .plate { min-height: 240px; }
+  .bar span { transform: none; }
+  .tray { position: static; width: auto; transform: none; margin-top: var(--s-5); border: 1px solid var(--edge); display: none; }
+  .tray[data-open] { display: block; visibility: visible; }
+}
