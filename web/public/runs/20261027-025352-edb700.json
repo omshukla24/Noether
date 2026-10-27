@@ -1,0 +1,819 @@
+{
+  "noether": "0.1.0",
+  "run_id": "20261027-025352-edb700",
+  "repo": "local/hopper",
+  "pr": {
+    "url": "",
+    "title": "Refactor physics step into integrate(); tune jump feel"
+  },
+  "base": {
+    "ref": "base",
+    "sha": "489ee1ef7e4d"
+  },
+  "head": {
+    "ref": "head",
+    "sha": "8373cf89d84b"
+  },
+  "verdict": "CONSERVED",
+  "reason": "All 6 pinned behaviours were checked: 5 still hold on head, and 1 changed exactly as the pull request announced.",
+  "intent": {
+    "summary": "Refactors physics step into integrate() and adjusts coyote time and terminal fall speed to improve jump feel.",
+    "intended_changes": [
+      "Increases coyote time from 4 to 6 frames to allow more lenient jumps near ledge edges.",
+      "Raises terminal fall speed from 18 to 22 to make long drops feel snappier and reduce floatiness."
+    ],
+    "dependency_bumps": []
+  },
+  "invariants": [
+    {
+      "name": "terminal-speed-clamps-downward-velocity",
+      "claim": "Vertical velocity never goes below -TERMINAL_SPEED due to gravity clamping.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('terminal speed clamps downward velocity', async t => {\n  const level = { spawn: [0, 10, 0], killY: -12, platforms: [], coins: [], goal: {id:'g',min:[0,0,0],max:[0,0,0]} };\n  let state = createState(level);\n  state.grounded = false;\n  state.vel = [0, -25, 0];\n  const idle = {x:0, z:0, jump:false};\n  state = step(state, idle, level, 0);\n  assert.equal(state.vel[1], -18);\n  state = step(state, idle, level, 1);\n  assert.equal(state.vel[1], -18);\n});",
+      "base": "pass",
+      "head": "fail",
+      "kind": "intended",
+      "output": "[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\n-22 !== -18\n] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  -22 !== -18\n  \n      at TestContext.<anonymous> (file:///w/repo/.noether/pinned/terminal-speed-clamps-downward-velocity.test.mjs:8:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: -22,\n    expected: -18,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n}"
+    },
+    {
+      "name": "horizontal-speed-clamps-to-max-run-speed",
+      "claim": "Horizontal speed is clamped to MAX_RUN_SPEED when acceleration would exceed it.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('horizontal speed clamps to max run speed', async t => {\n  const level = { spawn: [0, 0, 0], killY: -12, platforms: [{id:'p',min:[0,-1,0],max:[1,0,1]}], coins: [], goal: {id:'g',min:[0,0,0],max:[0,0,0]} };\n  let state = createState(level);\n  state.grounded = true;\n  state.vel = [12, 0, 0];\n  const input = {x:1, z:0, jump:false};\n  state = step(state, input, level, 0);\n  const speed = Math.sqrt(state.vel[0]*state.vel[0] + state.vel[2]*state.vel[2]);\n  assert.equal(speed, 10);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "coyote-time-allows-jump-shortly-after-leaving-ground",
+      "claim": "Jump is allowed within COYOTE_FRAMES after leaving ground even without jump buffer.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('coyote time allows jump shortly after leaving ground', async t => {\n  const level = { spawn: [0, 0.5, 0], killY: -12, platforms: [{id:'p',min:[0,0,0],max:[1,0.2,1]}], coins: [], goal: {id:'g',min:[0,0,0],max:[0,0,0]} };\n  let state = createState(level);\n  state.pos = [0.5, 0.3, 0.5];\n  state.vel = [0, -1, 0];\n  state.grounded = false;\n  state.airFrames = 1;\n  state.buffer = 0;\n  const input = {x:0, z:0, jump:true};\n  state = step(state, input, level, 0);\n  assert.equal(state.vel[1], 14);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "jump-sets-vertical-velocity-to-jump-speed",
+      "claim": "When jump condition is met, vertical velocity is set exactly to JUMP_SPEED.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('jump sets vertical velocity to jump speed', async t => {\n  const level = { spawn: [0, 0.5, 0], killY: -12, platforms: [{id:'p',min:[0,0,0],max:[1,0.2,1]}], coins: [], goal: {id:'g',min:[0,0,0],max:[0,0,0]} };\n  let state = createState(level);\n  state.pos = [0.5, 0.3, 0.5];\n  state.vel = [0, 0, 0];\n  state.grounded = true;\n  state.airFrames = 0;\n  state.buffer = 5;\n  const input = {x:0, z:0, jump:true};\n  state = step(state, input, level, 0);\n  assert.equal(state.vel[1], 14);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "coin-collection-is-idempotent-and-tracked-by-index",
+      "claim": "Collecting a coin adds its index to coins array exactly once and never removes it.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('coin collection is idempotent and tracked by index', async t => {\n  const level = {\n    spawn: [0, 2, 0],\n    killY: -12,\n    platforms: [{id:'p',min:[0,0,0],max:[1,0.2,1]}],\n    coins: [[0.5, 1.8, 0.5]],\n    goal: {id:'g',min:[0,0,0],max:[0,0,0]}\n  };\n  let state = createState(level);\n  state.pos = [0.5, 1.8, 0.5];\n  state.vel = [0, 0, 0];\n  state.grounded = true;\n  const input = {x:0, z:0, jump:false};\n  state = step(state, input, level, 0);\n  assert.deepEqual(state.coins, [0]);\n  state = step(state, input, level, 1);\n  assert.deepEqual(state.coins, [0]);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "respawn-increments-deaths-and-resets-state-but-keeps-coins",
+      "claim": "When falling below killY, deaths increments and state resets (pos, vel, etc.) but coins are preserved.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';import assert from 'node:assert/strict';import { createState, step } from '../../src/physics.js';test('respawn increments deaths and resets state but keeps coins', async t => {\n  const level = {\n    spawn: [0, 1, 0],\n    killY: 0,\n    platforms: [],\n    coins: [[0, 2, 0]],\n    goal: {id:'g',min:[0,0,0],max:[0,0,0]}\n  };\n  let state = createState(level);\n  state.coins = [0];\n  state.deaths = 2;\n  state.pos = [0, -1, 0];\n  state.vel = [0, -1, 0];\n  const input = {x:0, z:0, jump:false};\n  state = step(state, input, level, 0);\n  assert.equal(state.deaths, 3);\n  assert.deepEqual(state.pos, [0, 1, 0]);\n  assert.deepEqual(state.vel, [0, 0, 0]);\n  assert.equal(state.grounded, true);\n  assert.deepEqual(state.coins, [0]);\n});",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    }
+  ],
+  "dropped": [
+    {
+      "name": "gravity-applies-consistently-in-air",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "grounded-resets-airframes-when-landing",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "jump-buffer-allows-early-press-to-be-used-later",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "air-control-reduces-horizontal-acceleration",
+      "reason": "red on base: [Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 1, signal: null }"
+    },
+    {
+      "name": "ground-friction-applies-based-on-input-held",
+      "reason": "red on base: [Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 1, signal: null }"
+    },
+    {
+      "name": "standing-on-tracks-platform-id-when-landed-on-mover",
+      "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+    }
+  ],
+  "breaks": [],
+  "own_suite": {
+    "base": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    "head": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    }
+  },
+  "sandbox": {
+    "snapshots": [
+      {
+        "label": "base",
+        "image": "42933ab9-eb9e-44a9-8edf-27a9caa7f3da"
+      },
+      {
+        "label": "head",
+        "image": "2c345a3b-1098-4df0-afcd-404755dd89f7"
+      }
+    ],
+    "seconds": 88.4036
+  },
+  "models": [
+    {
+      "role": "intent",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "tokens_in": 1401,
+      "tokens_out": 96,
+      "ms": 4464.9
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 5435,
+      "tokens_out": 4028,
+      "ms": 27333.4
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 9350,
+      "tokens_out": 1189,
+      "ms": 5438.7
+    },
+    {
+      "role": "judge",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "tokens_in": 2086,
+      "tokens_out": 316,
+      "ms": 1870.4
+    }
+  ],
+  "cost_est_usd": 0.0123,
+  "timeline": [
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "done",
+      "data": {
+        "repo": "local/hopper",
+        "base_sha": "489ee1ef7e4d",
+        "head_sha": "8373cf89d84b",
+        "title": "Refactor physics step into integrate(); tune jump feel",
+        "files": [
+          "src/physics.js"
+        ]
+      }
+    },
+    {
+      "t_ms": 0,
+      "stage": "intent",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 4468,
+      "stage": "intent",
+      "type": "done",
+      "data": {
+        "summary": "Refactors physics step into integrate() and adjusts coyote time and terminal fall speed to improve jump feel.",
+        "intended_changes": [
+          "Increases coyote time from 4 to 6 frames to allow more lenient jumps near ledge edges.",
+          "Raises terminal fall speed from 18 to 22 to make long drops feel snappier and reduce floatiness."
+        ],
+        "dependency_bumps": []
+      }
+    },
+    {
+      "t_ms": 4468,
+      "stage": "pin",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 31812,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "gravity-applies-consistently-in-air",
+        "claim": "When airborne, vertical velocity decreases by GRAVITY*DT each frame until hitting -TERMINAL_SPEED.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "claim": "Vertical velocity never goes below -TERMINAL_SPEED due to gravity clamping.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-clamps-to-max-run-speed",
+        "claim": "Horizontal speed is clamped to MAX_RUN_SPEED when acceleration would exceed it.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "grounded-resets-airframes-when-landing",
+        "claim": "When landing on a platform, airFrames resets to 0 and grounded becomes true.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-shortly-after-leaving-ground",
+        "claim": "Jump is allowed within COYOTE_FRAMES after leaving ground even without jump buffer.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-allows-early-press-to-be-used-later",
+        "claim": "A jump press queued in buffer can trigger jump up to JUMP_BUFFER_FRAMES later if coyote time is active.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "jump-sets-vertical-velocity-to-jump-speed",
+        "claim": "When jump condition is met, vertical velocity is set exactly to JUMP_SPEED.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "air-control-reduces-horizontal-acceleration",
+        "claim": "While airborne, horizontal acceleration is reduced to AIR_CONTROL * RUN_ACCEL * DT per frame.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "ground-friction-applies-based-on-input-held",
+        "claim": "On ground, horizontal velocity is scaled by RUN_FRICTION when input is held, STOP_FRICTION when not.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "standing-on-tracks-platform-id-when-landed-on-mover",
+        "claim": "When landing on a moving platform, standingOn is set to that platform's id.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "coin-collection-is-idempotent-and-tracked-by-index",
+        "claim": "Collecting a coin adds its index to coins array exactly once and never removes it.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "respawn-increments-deaths-and-resets-state-but-keeps-coins",
+        "claim": "When falling below killY, deaths increments and state resets (pos, vel, etc.) but coins are preserved.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "pin",
+      "type": "done",
+      "data": {
+        "kept": 12,
+        "dropped": [
+          {
+            "name": "gravity-applies-consistently-in-air",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "grounded-resets-airframes-when-landing",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "jump-buffer-allows-early-press-to-be-used-later",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "air-control-reduces-horizontal-acceleration",
+            "reason": "red on base: [Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 1, signal: null }"
+          },
+          {
+            "name": "ground-friction-applies-based-on-input-held",
+            "reason": "red on base: [Error: test failed] { code: 'ERR_TEST_FAILURE', failureType: 'testCodeFailure', cause: 'test failed', exitCode: 1, signal: null }"
+          },
+          {
+            "name": "standing-on-tracks-platform-id-when-landed-on-mover",
+            "reason": "red on base: [Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:"
+          }
+        ]
+      }
+    },
+    {
+      "t_ms": 31813,
+      "stage": "base",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "gravity-applies-consistently-in-air",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-clamps-to-max-run-speed",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "grounded-resets-airframes-when-landing",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-shortly-after-leaving-ground",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-allows-early-press-to-be-used-later",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-sets-vertical-velocity-to-jump-speed",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "air-control-reduces-horizontal-acceleration",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "ground-friction-applies-based-on-input-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "standing-on-tracks-platform-id-when-landed-on-mover",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coin-collection-is-idempotent-and-tracked-by-index",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 51904,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "respawn-increments-deaths-and-resets-state-but-keeps-coins",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 61730,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "gravity-applies-consistently-in-air",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 61730,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 61730,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-clamps-to-max-run-speed",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 61730,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "grounded-resets-airframes-when-landing",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "gravity-applies-consistently-in-air",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-clamps-to-max-run-speed",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "grounded-resets-airframes-when-landing",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-shortly-after-leaving-ground",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-allows-early-press-to-be-used-later",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-sets-vertical-velocity-to-jump-speed",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "air-control-reduces-horizontal-acceleration",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "ground-friction-applies-based-on-input-held",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "standing-on-tracks-platform-id-when-landed-on-mover",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coin-collection-is-idempotent-and-tracked-by-index",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 65392,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "respawn-increments-deaths-and-resets-state-but-keeps-coins",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 70196,
+      "stage": "base",
+      "type": "done",
+      "data": {
+        "pinned": [
+          "terminal-speed-clamps-downward-velocity",
+          "horizontal-speed-clamps-to-max-run-speed",
+          "coyote-time-allows-jump-shortly-after-leaving-ground",
+          "jump-sets-vertical-velocity-to-jump-speed",
+          "coin-collection-is-idempotent-and-tracked-by-index",
+          "respawn-increments-deaths-and-resets-state-but-keeps-coins"
+        ],
+        "flaky": [],
+        "repaired": [
+          "gravity-applies-consistently-in-air",
+          "grounded-resets-airframes-when-landing",
+          "horizontal-speed-clamps-to-max-run-speed",
+          "terminal-speed-clamps-downward-velocity"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "checkpoint": "42933ab9-eb9e-44a9-8edf-27a9caa7f3da"
+      }
+    },
+    {
+      "t_ms": 70196,
+      "stage": "head",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-clamps-to-max-run-speed",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-shortly-after-leaving-ground",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "jump-sets-vertical-velocity-to-jump-speed",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "coin-collection-is-idempotent-and-tracked-by-index",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 123737,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "respawn-increments-deaths-and-resets-state-but-keeps-coins",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 126743,
+      "stage": "head",
+      "type": "done",
+      "data": {
+        "flips": [
+          "terminal-speed-clamps-downward-velocity"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "branch": "2c345a3b-1098-4df0-afcd-404755dd89f7"
+      }
+    },
+    {
+      "t_ms": 126743,
+      "stage": "judge",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 128616,
+      "stage": "judge",
+      "type": "progress",
+      "data": {
+        "name": "terminal-speed-clamps-downward-velocity",
+        "kind": "intended",
+        "reason": "The PR explicitly announces raising TERMINAL_SPEED from 18 to 22 for snappier landings, and the diff shows this constant change; the test failure reflects the new intended terminal velocity clamp value."
+      }
+    },
+    {
+      "t_ms": 128616,
+      "stage": "judge",
+      "type": "done",
+      "data": {
+        "silent": [],
+        "intended": [
+          "terminal-speed-clamps-downward-velocity"
+        ]
+      }
+    },
+    {
+      "t_ms": 128616,
+      "stage": "seal",
+      "type": "start",
+      "data": {}
+    }
+  ],
+  "sha256": "5176da065706ecc2ba08dc14ab1acef9674d9bc36d58555575c6fbbae82c7841"
+}
