@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Libre_Franklin, STIX_Two_Text } from "next/font/google";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { Emmy } from "@/components/Emmy";
 import "../styles/tokens.css";
 import "./globals.css";
 
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Nav />
         <main id="main">{children}</main>
         <Footer />
+        <Emmy />
       </body>
     </html>
   );

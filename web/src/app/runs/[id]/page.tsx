@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { RemoteRun } from "@/components/run/RemoteRun";
 import { RunView } from "@/components/run/RunView";
-import styles from "@/components/run/Run.module.css";
 import { LIVE_RUN_ID, listRunIds, loadRun } from "@/lib/runs";
 
 export function generateStaticParams() {
@@ -31,25 +29,11 @@ export async function generateMetadata({ params }: PageProps<"/runs/[id]">): Pro
   };
 }
 
-function Run({ id }: { id: string }) {
+// Ids built into the site render here at build time; any other id is looked up in the API by the browser.
+export default async function RunPage({ params }: PageProps<"/runs/[id]">) {
+  const { id } = await params;
   const bundle = loadRun(id);
   if (bundle) return <RunView bundle={bundle} />;
   if (!LIVE_RUN_ID.test(id)) notFound();
   return <RemoteRun id={id} />;
-}
-
-export default function RunPage({ params }: PageProps<"/runs/[id]">) {
-  return (
-    <Suspense
-      fallback={
-        <div className={styles.notice}>
-          <p className="label">Sealed run</p>
-        </div>
-      }
-    >
-      {params.then(({ id }) => (
-        <Run id={id} />
-      ))}
-    </Suspense>
-  );
 }

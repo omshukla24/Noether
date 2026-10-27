@@ -9,7 +9,14 @@ const DIR = join(process.cwd(), "public", "runs");
 export const LIVE_RUN_ID = /^\d{8}-\d{6}-[0-9a-f]{6}$/;
 
 export function listRunIds(): string[] {
-  const ids = readdirSync(DIR).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
+  // On the host the function may not carry public/, so a missing folder just means no built-in runs.
+  let files: string[] = [];
+  try {
+    files = readdirSync(DIR);
+  } catch {
+    return [];
+  }
+  const ids = files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
   return ids.sort((a, b) => (a === "hopper" ? -1 : b === "hopper" ? 1 : a < b ? -1 : 1));
 }
 
