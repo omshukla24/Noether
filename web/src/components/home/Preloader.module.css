@@ -1,20 +1,50 @@
+/* A status chip and a top rule over a page that is already readable; nothing here covers the copy. */
 .loader {
   position: fixed;
   inset: 0;
   z-index: 90;
-  display: grid;
-  place-items: center;
-  background: var(--ground);
-  clip-path: inset(0 0 0 0);
+  pointer-events: none;
   --p: 0;
 }
-.inner {
-  width: min(420px, calc(100vw - 32px));
+
+/* the rule across the very top fills with real progress */
+.rule {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
 }
+.rule span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.chip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(16px, 3vh, 32px);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 8px 14px;
+  background: var(--plate);
+  border: var(--bd-hair);
+  border-radius: var(--r-plate);
+  box-shadow: var(--lift);
+  white-space: nowrap;
+}
+
 /* one spectral line settles onto the ruler per 10 % of real progress */
 .lines {
   position: relative;
-  height: 72px;
+  width: 80px;
+  height: 28px;
   border-bottom: var(--bd-hair);
 }
 .lines span {
@@ -25,30 +55,24 @@
   height: var(--h);
   background: var(--accent);
   opacity: clamp(0, calc((var(--p) * 10 - var(--i)) * 1), 1);
-  transform: translateY(calc((1 - clamp(0, calc(var(--p) * 10 - var(--i)), 1)) * -18px));
+  transform: translateY(calc((1 - clamp(0, calc(var(--p) * 10 - var(--i)), 1)) * -8px));
 }
 .count {
-  margin: var(--s-5) 0 0;
+  margin: 0;
+  min-width: 3ch;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 2rem + 4vw, 5rem);
+  font-size: 1.5rem;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 .word {
-  margin: var(--s-2) 0 var(--s-4);
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   letter-spacing: var(--tracking-caps);
   color: var(--muted);
 }
-.bar {
-  height: 1px;
-  background: var(--line);
-}
-.bar span {
-  display: block;
-  height: 100%;
-  background: var(--ink);
-  transform: scaleX(0);
-  transform-origin: left;
+
+@media (max-width: 480px) {
+  .lines { display: none; }
 }

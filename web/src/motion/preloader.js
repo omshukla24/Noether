@@ -1,6 +1,7 @@
 // Preloader driven by real work, not a fake timer: fonts, marked images and any
-// extra promises (a WebGL scene, a video) each move the counter. A hard cap means
-// a slow asset can never trap the reader behind the loader.
+// extra promises (a WebGL scene, a video) each move the counter. It is a status
+// chip and a top rule over a page that is already readable, so a slow asset can
+// never hold the reader back; the hard cap only ends the counter.
 import { gsap } from 'gsap';
 import { EASE } from './config.js';
 import { prefersReducedMotion } from './env.js';
@@ -12,7 +13,7 @@ const HARD_CAP_MS = 4000;
  * @param {HTMLElement | null} el
  * @param {{ tasks?: Promise<unknown>[], minMs?: number }} [options]
  */
-export function runPreloader(el, { tasks = [], minMs = 900 } = {}) {
+export function runPreloader(el, { tasks = [], minMs = 700 } = {}) {
   if (!el) return Promise.resolve();
   const bar = el.querySelector('[data-preload-bar]');
   const pct = el.querySelector('[data-preload-pct]');
@@ -52,8 +53,8 @@ export function runPreloader(el, { tasks = [], minMs = 900 } = {}) {
       return;
     }
     gsap.timeline({ onComplete: finish })
-      .to(shown, { v: 1, duration: 0.5, ease: EASE.settle, onUpdate: render })
-      .to(el.querySelector('[data-preload-inner]'), { y: -24, autoAlpha: 0, duration: 0.5, ease: EASE.exit })
-      .to(el, { clipPath: 'inset(0% 0% 100% 0%)', duration: 1.05, ease: EASE.orbital }, '-=0.15');
+      .to(shown, { v: 1, duration: 0.4, ease: EASE.settle, onUpdate: render })
+      .to(el.querySelector('[data-preload-inner]'), { y: 8, autoAlpha: 0, duration: 0.4, ease: EASE.exit })
+      .to(el, { autoAlpha: 0, duration: 0.3, ease: EASE.exit }, '-=0.1');
   }));
 }
