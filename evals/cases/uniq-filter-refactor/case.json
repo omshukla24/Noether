@@ -1,4 +1,4 @@
 {
   "expected": "CONSERVED",
-  "note": "A pure refactor that really keeps behaviour (first duplicate wins); any alarm here is a false alarm."
+  "note": "A pure refactor that really keeps behaviour (first duplicate wins). The input is spread before filter, so holes in sparse arrays and non-array iterables come out as they did from the loop; any alarm here is a false alarm."
 }
