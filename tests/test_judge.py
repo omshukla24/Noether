@@ -103,4 +103,5 @@ def test_the_judge_applies_the_rule_to_each_input_before_it_labels_the_flip(chan
     assert keys.index("rule_gives") < keys.index("kind") and keys.index("head_gives") < keys.index("kind")
     system = build_judge_messages(INTENT, change, [flip("a-test")])[0]["content"]
     assert "the reading that every example fits is the rule" in system
+    assert "Examples show a rule, they never narrow it" in system
     assert "A flip is intended only when both are the same result" in system

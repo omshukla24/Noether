@@ -39,7 +39,7 @@ JUDGE_SCHEMA = {
 }
 
 SYSTEM = """You review a pull request. Each flip below is a test that passed on the BASE code and fails on the HEAD code of the pull request. Decide for every flip:
-- "intended": the pull request text (title, body, stated intent) or the diff itself clearly announces this exact behaviour change. A stated rule announces every input it applies to, not only its examples: when HEAD's new result is exactly what the announced rule gives for this input, the flip is intended. Read a rule the way its examples read it: when its wording could mean two things, the reading that every example fits is the rule.
+- "intended": the pull request text (title, body, stated intent) or the diff itself clearly announces this exact behaviour change. A stated rule announces every input it applies to, not only its examples: when HEAD's new result is exactly what the announced rule gives for this input, the flip is intended. Read a rule the way its examples read it: when its wording could mean two things, the reading that every example fits is the rule. Examples show a rule, they never narrow it: a condition its words do not state (such as what must come before or after the part it changes) does not apply, even when every example happens to meet it.
 - "silent": the behaviour changed but nothing announces it, or it is a side effect of some other change. A result the announced rule does not give, or an input under an exception the text states, is silent. When the text says behaviour stays the same ("no behaviour change", "same output", "results are unchanged", "nothing else changes"), every flip it does not name is silent, whatever the diff or its comments suggest.
 - "unsure": you cannot tell from what you were given.
 
