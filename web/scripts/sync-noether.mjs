@@ -27,15 +27,17 @@ for (const name of sources) {
   }
 }
 
-// The GitHub Action example shown on the home page is the real file, copied in so the build needs nothing outside web/.
-const EXAMPLE = [join(WEB, "..", "examples", "noether.yml"), join(WEB, "src", "content", "noether.yml")];
-{
-  const want = readFileSync(EXAMPLE[0]);
-  if (!existsSync(EXAMPLE[1]) || !readFileSync(EXAMPLE[1]).equals(want)) {
-    stale.push("examples/noether.yml");
+// The GitHub Action example (home page) and the Action itself (/action) are the real files, copied in so the
+// build needs nothing outside web/.
+for (const [from, to] of [["examples/noether.yml", "noether.yml"], ["action.yml", "action.yml"]]) {
+  const source = join(WEB, "..", from);
+  const target = join(WEB, "src", "content", to);
+  const want = readFileSync(source);
+  if (!existsSync(target) || !readFileSync(target).equals(want)) {
+    stale.push(from);
     if (!CHECK) {
-      mkdirSync(dirname(EXAMPLE[1]), { recursive: true });
-      writeFileSync(EXAMPLE[1], want);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, want);
     }
   }
 }
