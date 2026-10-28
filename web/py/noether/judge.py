@@ -25,10 +25,13 @@ JUDGE_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
+                    # worked out before the label, so the label follows from applying the rule, not from its wording
+                    "rule_gives": {"type": "string"},
+                    "head_gives": {"type": "string"},
                     "kind": {"type": "string", "enum": ["intended", "silent", "unsure"]},
                     "reason": {"type": "string"},
                 },
-                "required": ["name", "kind", "reason"],
+                "required": ["name", "rule_gives", "head_gives", "kind", "reason"],
             },
         }
     },
@@ -36,12 +39,16 @@ JUDGE_SCHEMA = {
 }
 
 SYSTEM = """You review a pull request. Each flip below is a test that passed on the BASE code and fails on the HEAD code of the pull request. Decide for every flip:
-- "intended": the pull request text (title, body, stated intent) or the diff itself clearly announces this exact behaviour change. A stated rule announces every input it applies to, not only its examples: when HEAD's new result is exactly what the announced rule gives for this input, the flip is intended.
+- "intended": the pull request text (title, body, stated intent) or the diff itself clearly announces this exact behaviour change. A stated rule announces every input it applies to, not only its examples: when HEAD's new result is exactly what the announced rule gives for this input, the flip is intended. Read a rule the way its examples read it: when its wording could mean two things, the reading that every example fits is the rule.
 - "silent": the behaviour changed but nothing announces it, or it is a side effect of some other change. A result the announced rule does not give, or an input under an exception the text states, is silent. When the text says behaviour stays the same ("no behaviour change", "same output", "results are unchanged", "nothing else changes"), every flip it does not name is silent, whatever the diff or its comments suggest.
 - "unsure": you cannot tell from what you were given.
 
 Do not call a flip intended just because the diff touches the same code. The change in behaviour itself must be announced or plainly the point of the diff. When in doubt, say "unsure".
-Return {"verdicts": [{"name": ..., "kind": ..., "reason": ...}]} with one entry per flip, name copied exactly, and a one-sentence reason a reviewer can check."""
+For every flip, before you pick its kind, apply the announced changes to the flip's input step by step:
+- "rule_gives": the result the announced changes give for that input, or "no announced change covers this input".
+- "head_gives": the result HEAD gave for that input, read from the failure output.
+A flip is intended only when both are the same result.
+Return {"verdicts": [{"name": ..., "rule_gives": ..., "head_gives": ..., "kind": ..., "reason": ...}]} with one entry per flip, name copied exactly, and a one-sentence reason a reviewer can check."""
 
 
 def build_judge_messages(intent: Intent, change: Change, flips: list[Flip]) -> list[dict]:

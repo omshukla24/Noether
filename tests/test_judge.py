@@ -14,7 +14,8 @@ def flip(name, **kw):
 
 
 def verdicts(*entries):
-    return json.dumps({"verdicts": [{"name": n, "kind": k, "reason": r} for n, k, r in entries]})
+    return json.dumps({"verdicts": [{"name": n, "rule_gives": "x", "head_gives": "x", "kind": k, "reason": r}
+                                    for n, k, r in entries]})
 
 
 def test_no_flips_means_no_call(make_client, change):
@@ -95,3 +96,11 @@ def test_the_judge_reads_a_stated_rule_as_covering_every_input_and_unchanged_as_
     assert "A stated rule announces every input it applies to, not only its examples" in system
     assert "an input under an exception the text states, is silent" in system
     assert "whatever the diff or its comments suggest" in system
+
+
+def test_the_judge_applies_the_rule_to_each_input_before_it_labels_the_flip(change):
+    keys = list(JUDGE_SCHEMA["properties"]["verdicts"]["items"]["properties"])
+    assert keys.index("rule_gives") < keys.index("kind") and keys.index("head_gives") < keys.index("kind")
+    system = build_judge_messages(INTENT, change, [flip("a-test")])[0]["content"]
+    assert "the reading that every example fits is the rule" in system
+    assert "A flip is intended only when both are the same result" in system
