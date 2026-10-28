@@ -1,11 +1,11 @@
 {
-  "stamp": "20261028-025850",
+  "stamp": "20261028-031307",
   "runner": "contree",
   "runs_per_case": 3,
   "workers": 4,
   "budget_usd": 1.5,
-  "commit": "20bf97f",
-  "wall_seconds": 615.3,
+  "commit": "abb8c9d",
+  "wall_seconds": 651.1,
   "summary": {
     "cases": [
       {
@@ -34,16 +34,16 @@
         "runs": 3,
         "verdicts": [
           "BROKEN",
-          "BROKEN",
+          "CONSERVED",
           "BROKEN"
         ],
         "outcomes": [
           "caught",
-          "caught",
+          "missed",
           "caught"
         ],
-        "caught": 3,
-        "missed": 0,
+        "caught": 2,
+        "missed": 1,
         "ok": 0,
         "false_alarm": 0,
         "inconclusive": 0
@@ -54,19 +54,19 @@
         "runs": 3,
         "verdicts": [
           "BROKEN",
-          "BROKEN",
+          "INCONCLUSIVE",
           "BROKEN"
         ],
         "outcomes": [
           "false_alarm",
-          "false_alarm",
+          "inconclusive",
           "false_alarm"
         ],
         "caught": 0,
         "missed": 0,
         "ok": 0,
-        "false_alarm": 3,
-        "inconclusive": 0
+        "false_alarm": 2,
+        "inconclusive": 1
       },
       {
         "case": "camel-short-numbers",
@@ -74,19 +74,19 @@
         "runs": 3,
         "verdicts": [
           "BROKEN",
-          "BROKEN",
+          "INCONCLUSIVE",
           "BROKEN"
         ],
         "outcomes": [
           "caught",
-          "caught",
+          "inconclusive",
           "caught"
         ],
-        "caught": 3,
+        "caught": 2,
         "missed": 0,
         "ok": 0,
         "false_alarm": 0,
-        "inconclusive": 0
+        "inconclusive": 1
       },
       {
         "case": "cart-threshold-only",
@@ -153,20 +153,20 @@
         "expected": "BROKEN",
         "runs": 3,
         "verdicts": [
-          "BROKEN",
+          "INCONCLUSIVE",
           "BROKEN",
           "CONSERVED"
         ],
         "outcomes": [
-          "caught",
+          "inconclusive",
           "caught",
           "missed"
         ],
-        "caught": 2,
+        "caught": 1,
         "missed": 1,
         "ok": 0,
         "false_alarm": 0,
-        "inconclusive": 0
+        "inconclusive": 1
       },
       {
         "case": "paginate-past-the-end",
@@ -175,15 +175,15 @@
         "verdicts": [
           "BROKEN",
           "BROKEN",
-          "CONSERVED"
+          "BROKEN"
         ],
         "outcomes": [
           "caught",
           "caught",
-          "missed"
+          "caught"
         ],
-        "caught": 2,
-        "missed": 1,
+        "caught": 3,
+        "missed": 0,
         "ok": 0,
         "false_alarm": 0,
         "inconclusive": 0
@@ -193,20 +193,20 @@
         "expected": "BROKEN",
         "runs": 3,
         "verdicts": [
-          "CONSERVED",
+          "INCONCLUSIVE",
           "CONSERVED",
           "BROKEN"
         ],
         "outcomes": [
-          "missed",
+          "inconclusive",
           "missed",
           "caught"
         ],
         "caught": 1,
-        "missed": 2,
+        "missed": 1,
         "ok": 0,
         "false_alarm": 0,
-        "inconclusive": 0
+        "inconclusive": 1
       },
       {
         "case": "slug-underscore-announced",
@@ -235,15 +235,15 @@
         "verdicts": [
           "BROKEN",
           "BROKEN",
-          "BROKEN"
+          "CONSERVED"
         ],
         "outcomes": [
           "caught",
           "caught",
-          "caught"
+          "missed"
         ],
-        "caught": 3,
-        "missed": 0,
+        "caught": 2,
+        "missed": 1,
         "ok": 0,
         "false_alarm": 0,
         "inconclusive": 0
@@ -290,17 +290,17 @@
       }
     ],
     "silent_break_runs": 24,
-    "silent_break_caught": 20,
-    "hit_rate": 0.8333,
-    "hit_rate_decided": 0.8333,
+    "silent_break_caught": 17,
+    "hit_rate": 0.7083,
+    "hit_rate_decided": 0.8095,
     "announced_runs": 18,
-    "announced_false_alarms": 3,
-    "false_alarm_rate": 0.1667,
-    "false_alarm_rate_decided": 0.1667,
-    "inconclusive": 0,
+    "announced_false_alarms": 2,
+    "false_alarm_rate": 0.1111,
+    "false_alarm_rate_decided": 0.1176,
+    "inconclusive": 4,
     "runs": 42,
-    "cost_usd": 0.7072,
-    "run_seconds": 2408.5
+    "cost_usd": 0.6369,
+    "run_seconds": 2563.8
   },
   "skipped": [],
   "cases": [
@@ -381,491 +381,454 @@
       "expected": "CONSERVED",
       "run": 1,
       "verdict": "CONSERVED",
-      "reason": "All 10 pinned behaviours were checked: 4 still hold on head, and 6 changed exactly as the pull request announced.",
-      "cost_usd": 0.015271,
-      "run_id": "20261027-212850-62dcb9",
+      "reason": "All 9 pinned behaviours were checked: 3 still hold on head, and 6 changed exactly as the pull request announced.",
+      "cost_usd": 0.017811,
+      "run_id": "20261027-214308-80b182",
       "silent": [],
       "intended": [
-        "retry-delay-default-cap-is-30-seconds-base",
-        "retry-delay-default-cap-is-10-seconds-head",
-        "retry-delay-cap-boundary-at-attempt-9-base",
-        "retry-delay-cap-boundary-at-attempt-10-base",
-        "retry-delay-cap-boundary-at-attempt-10-head",
-        "retry-delay-jitter-with-default-cap-base"
+        "retry-delay-default-cap-is-thirty-seconds-in-base",
+        "retry-delay-default-cap-is-ten-seconds-in-head-but-we-test-b",
+        "retry-delay-transitions-from-exponential-to-cap-at-attempt-9",
+        "retry-delay-transitions-from-exponential-to-cap-at-attempt-8",
+        "retry-delay-with-custom-base-and-default-max-respects-cap-in",
+        "retry-delay-with-custom-base-and-lower-max-respects-cap-in-b"
       ],
-      "pinned": 10,
+      "pinned": 9,
       "repaired": 2,
       "dropped": 2,
       "probed": [
-        "retry-delay-default-cap-is-30-seconds-base",
-        "retry-delay-default-cap-is-10-seconds-head",
-        "retry-delay-cap-boundary-at-attempt-9-base",
-        "retry-delay-cap-boundary-at-attempt-10-base",
-        "retry-delay-cap-boundary-at-attempt-10-head",
-        "retry-delay-jitter-with-default-cap-base"
+        "retry-delay-default-cap-is-thirty-seconds-in-base",
+        "retry-delay-default-cap-is-ten-seconds-in-head-but-we-test-b",
+        "retry-delay-transitions-from-exponential-to-cap-at-attempt-9",
+        "retry-delay-transitions-from-exponential-to-cap-at-attempt-8",
+        "retry-delay-with-custom-base-and-default-max-respects-cap-in",
+        "retry-delay-with-custom-base-and-lower-max-respects-cap-in-b"
       ],
-      "sandbox_seconds": 24.8,
-      "bundle": "20261027-212850-62dcb9/bundle.json",
-      "seconds": 57.6
+      "sandbox_seconds": 28.0,
+      "bundle": "20261027-214308-80b182/bundle.json",
+      "seconds": 76.6
     },
     {
       "case": "backoff-cap-announced",
       "expected": "CONSERVED",
       "run": 2,
       "verdict": "CONSERVED",
-      "reason": "All 11 pinned behaviours were checked: 9 still hold on head, and 2 changed exactly as the pull request announced.",
-      "cost_usd": 0.013241,
-      "run_id": "20261027-213144-965da5",
+      "reason": "All 12 pinned behaviours were checked: 7 still hold on head, and 5 changed exactly as the pull request announced.",
+      "cost_usd": 0.019136,
+      "run_id": "20261027-214641-5d8c92",
       "silent": [],
       "intended": [
-        "retry-delay-default-cap-lowered-to-ten-seconds",
-        "retry-delay-max-clamp-at-ten-thousand-inclusive"
-      ],
-      "pinned": 11,
-      "repaired": 1,
-      "dropped": 1,
-      "probed": [
-        "retry-delay-default-cap-lowered-to-ten-seconds",
-        "retry-delay-max-clamp-at-ten-thousand-inclusive",
-        "retry-delay-behavior-below-new-cap-unaffected",
-        "retry-delay-jitter-with-new-cap",
-        "retry-delay-attempt-validation-unchanged",
-        "retry-delay-returns-integer-milliseconds-after-rounding"
-      ],
-      "sandbox_seconds": 29.6,
-      "bundle": "20261027-213144-965da5/bundle.json",
-      "seconds": 61.6
-    },
-    {
-      "case": "backoff-cap-announced",
-      "expected": "CONSERVED",
-      "run": 3,
-      "verdict": "CONSERVED",
-      "reason": "All 11 pinned behaviours were checked: 9 still hold on head, and 2 changed exactly as the pull request announced.",
-      "cost_usd": 0.017235,
-      "run_id": "20261027-213501-32e0ca",
-      "silent": [],
-      "intended": [
-        "retry-delay-default-parameters-produce-expected-sequence",
-        "retry-delay-default-sequence-up-to-new-cap"
-      ],
-      "pinned": 11,
-      "repaired": 3,
-      "dropped": 1,
-      "probed": [
-        "retry-delay-new-cap-affects-attempt-8",
-        "retry-delay-new-cap-clamps-attempt-8",
-        "retry-delay-new-cap-affects-attempt-7",
-        "retry-delay-new-cap-clamps-attempt-9",
-        "retry-delay-with-jitter-and-new-max",
-        "retry-delay-default-sequence-up-to-new-cap"
-      ],
-      "sandbox_seconds": 24.9,
-      "bundle": "20261027-213501-32e0ca/bundle.json",
-      "seconds": 59.0
-    },
-    {
-      "case": "backoff-jitter-at-cap",
-      "expected": "BROKEN",
-      "run": 1,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour retry-delay-jitter-with-max-cap held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.007561,
-      "run_id": "20261027-212850-bd6aa0",
-      "silent": [
-        "retry-delay-jitter-with-max-cap"
-      ],
-      "intended": [],
-      "pinned": 6,
-      "repaired": 2,
-      "dropped": 0,
-      "probed": [],
-      "sandbox_seconds": 17.2,
-      "bundle": "20261027-212850-bd6aa0/bundle.json",
-      "seconds": 35.4
-    },
-    {
-      "case": "backoff-jitter-at-cap",
-      "expected": "BROKEN",
-      "run": 2,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour retry-delay-max-clamp held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.007407,
-      "run_id": "20261027-213146-09f265",
-      "silent": [
-        "retry-delay-max-clamp"
-      ],
-      "intended": [],
-      "pinned": 6,
-      "repaired": 1,
-      "dropped": 0,
-      "probed": [],
-      "sandbox_seconds": 20.7,
-      "bundle": "20261027-213146-09f265/bundle.json",
-      "seconds": 36.0
-    },
-    {
-      "case": "backoff-jitter-at-cap",
-      "expected": "BROKEN",
-      "run": 3,
-      "verdict": "BROKEN",
-      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: retry-delay-order-of-operations-affects-rounding-before-clam, retry-delay-order-of-operations-affects-rounding-after-clamp.",
-      "cost_usd": 0.014908,
-      "run_id": "20261027-213528-9403db",
-      "silent": [
-        "retry-delay-order-of-operations-affects-rounding-before-clam",
-        "retry-delay-order-of-operations-affects-rounding-after-clamp"
-      ],
-      "intended": [],
-      "pinned": 16,
-      "repaired": 1,
-      "dropped": 2,
-      "probed": [
-        "retry-delay-order-of-operations-affects-rounding-before-clam",
-        "retry-delay-order-of-operations-affects-rounding-after-clamp",
-        "retry-delay-attempt-one-maximum-jitter",
-        "retry-delay-attempt-two-maximum-jitter",
-        "retry-delay-fractional-jitter-produces-expected-rounding"
-      ],
-      "sandbox_seconds": 31.5,
-      "bundle": "20261027-213528-9403db/bundle.json",
-      "seconds": 80.2
-    },
-    {
-      "case": "camel-long-numbers-announced",
-      "expected": "CONSERVED",
-      "run": 1,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour camelcase-leading-digits-handled held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.021648,
-      "run_id": "20261027-212850-e94497",
-      "silent": [
-        "camelcase-leading-digits-handled"
-      ],
-      "intended": [
-        "camelcase-digits-end-word-basic",
-        "camelcase-multi-digit-sequence"
+        "retry-delay-default-cap-is-thirty-seconds-in-base",
+        "retry-delay-hits-default-cap-at-attempt-nine-in-base",
+        "retry-delay-exceeds-default-cap-at-attempt-ten-in-base",
+        "retry-delay-default-cap-is-ten-seconds-in-head-but-we-test-b",
+        "retry-delay-exceeds-new-cap-in-base-but-would-be-capped-in-h"
       ],
       "pinned": 12,
-      "repaired": 4,
+      "repaired": 3,
+      "dropped": 2,
+      "probed": [
+        "retry-delay-default-cap-is-thirty-seconds-in-base",
+        "retry-delay-hits-default-cap-at-attempt-nine-in-base",
+        "retry-delay-exceeds-default-cap-at-attempt-ten-in-base",
+        "retry-delay-stays-below-default-cap-at-attempt-eight-in-base",
+        "retry-delay-default-cap-is-ten-seconds-in-head-but-we-test-b",
+        "retry-delay-exceeds-new-cap-in-base-but-would-be-capped-in-h"
+      ],
+      "sandbox_seconds": 32.6,
+      "bundle": "20261027-214641-5d8c92/bundle.json",
+      "seconds": 74.6
+    },
+    {
+      "case": "backoff-cap-announced",
+      "expected": "CONSERVED",
+      "run": 3,
+      "verdict": "CONSERVED",
+      "reason": "All 8 pinned behaviours were checked: 7 still hold on head, and 1 changed exactly as the pull request announced.",
+      "cost_usd": 0.009158,
+      "run_id": "20261027-215032-472691",
+      "silent": [],
+      "intended": [
+        "retry-delay-default-parameters-used"
+      ],
+      "pinned": 8,
+      "repaired": 3,
+      "dropped": 1,
+      "probed": [],
+      "sandbox_seconds": 23.1,
+      "bundle": "20261027-215032-472691/bundle.json",
+      "seconds": 48.5
+    },
+    {
+      "case": "backoff-jitter-at-cap",
+      "expected": "BROKEN",
+      "run": 1,
+      "verdict": "BROKEN",
+      "reason": "The pinned behaviour retry-delay-fractional-jitter-with-large-exponential held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.019842,
+      "run_id": "20261027-214308-fec0db",
+      "silent": [
+        "retry-delay-fractional-jitter-with-large-exponential"
+      ],
+      "intended": [],
+      "pinned": 15,
+      "repaired": 3,
+      "dropped": 3,
+      "probed": [
+        "retry-delay-rounding-behavior-at-halfway-points",
+        "retry-delay-fractional-jitter-with-large-exponential",
+        "retry-delay-attempt-zero-throws",
+        "retry-delay-negative-attempt-throws"
+      ],
+      "sandbox_seconds": 32.1,
+      "bundle": "20261027-214308-fec0db/bundle.json",
+      "seconds": 100.9
+    },
+    {
+      "case": "backoff-jitter-at-cap",
+      "expected": "BROKEN",
+      "run": 2,
+      "verdict": "CONSERVED",
+      "reason": "All 12 pinned behaviours were checked: 12 still hold on head.",
+      "cost_usd": 0.009156,
+      "run_id": "20261027-214644-8a2dab",
+      "silent": [],
+      "intended": [],
+      "pinned": 12,
+      "repaired": 3,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 18.2,
-      "bundle": "20261027-212850-e94497/bundle.json",
-      "seconds": 47.3
+      "sandbox_seconds": 45.9,
+      "bundle": "20261027-214644-8a2dab/bundle.json",
+      "seconds": 83.3
+    },
+    {
+      "case": "backoff-jitter-at-cap",
+      "expected": "BROKEN",
+      "run": 3,
+      "verdict": "BROKEN",
+      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: retry-delay-order-of-operations-change-affects-rounding-with, retry-delay-large-attempt-with-jitter-still-respects-max-via.",
+      "cost_usd": 0.013326,
+      "run_id": "20261027-215041-70b846",
+      "silent": [
+        "retry-delay-order-of-operations-change-affects-rounding-with",
+        "retry-delay-large-attempt-with-jitter-still-respects-max-via"
+      ],
+      "intended": [],
+      "pinned": 18,
+      "repaired": 0,
+      "dropped": 0,
+      "probed": [
+        "retry-delay-order-of-operations-change-affects-rounding-with",
+        "retry-delay-order-of-operations-preserves-max-cap-when-jitte",
+        "retry-delay-fractional-jitter-below-half-rounding-edge-case",
+        "retry-delay-large-attempt-with-jitter-still-respects-max-via",
+        "retry-delay-attempt-zero-throws-range-error",
+        "retry-delay-attempt-2-5-with-specific-jitter-shows-computati"
+      ],
+      "sandbox_seconds": 21.9,
+      "bundle": "20261027-215041-70b846/bundle.json",
+      "seconds": 63.4
+    },
+    {
+      "case": "camel-long-numbers-announced",
+      "expected": "CONSERVED",
+      "run": 1,
+      "verdict": "BROKEN",
+      "reason": "The pinned behaviour camelcase-handles-numbers-in-words held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.033992,
+      "run_id": "20261027-214308-3fad64",
+      "silent": [
+        "camelcase-handles-numbers-in-words"
+      ],
+      "intended": [],
+      "pinned": 6,
+      "repaired": 0,
+      "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 14.4,
+      "bundle": "20261027-214308-3fad64/bundle.json",
+      "seconds": 68.6
     },
     {
       "case": "camel-long-numbers-announced",
       "expected": "CONSERVED",
       "run": 2,
+      "verdict": "INCONCLUSIVE",
+      "reason": "sandbox failed during base: sandbox call failed: ApiTimeoutError(request=RequestInfo(url='https://api.tokenfactory.nebius.com/sandboxes/v1/files/8a0ad598c9288b8e321edcf899df39df91dee24139ab7f8b2a45a226f55081e4', method='GET'), response=None, timeout_type='connect')",
+      "cost_usd": 0.002729,
+      "run_id": "20261027-214709-34bd56",
+      "silent": [],
+      "intended": [],
+      "pinned": 10,
+      "repaired": 0,
+      "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 28.2,
+      "bundle": "20261027-214709-34bd56/bundle.json",
+      "seconds": 42.4
+    },
+    {
+      "case": "camel-long-numbers-announced",
+      "expected": "CONSERVED",
+      "run": 3,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour camelcase-leading-digits-handled held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.013474,
-      "run_id": "20261027-213149-c0f82d",
+      "reason": "The pinned behaviour camelcase-number-sequence-with-intervening-non-letter-no-eff held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.022833,
+      "run_id": "20261027-215043-e487f3",
       "silent": [
-        "camelcase-leading-digits-handled"
+        "camelcase-number-sequence-with-intervening-non-letter-no-eff"
+      ],
+      "intended": [
+        "camelcase-number-of-two-or-more-digits-ends-a-word-no-capita",
+        "camelcase-number-of-two-or-more-digits-ends-a-word-capital-a",
+        "camelcase-multiple-number-sequences-each-end-a-word"
+      ],
+      "pinned": 12,
+      "repaired": 2,
+      "dropped": 0,
+      "probed": [
+        "camelcase-number-of-two-or-more-digits-ends-a-word-no-capita",
+        "camelcase-number-of-two-or-more-digits-ends-a-word-capital-a",
+        "camelcase-single-digit-does-not-end-a-word",
+        "camelcase-number-at-end-of-input-no-effect",
+        "camelcase-multiple-number-sequences-each-end-a-word",
+        "camelcase-number-sequence-with-intervening-non-letter-no-eff"
+      ],
+      "sandbox_seconds": 25.5,
+      "bundle": "20261027-215043-e487f3/bundle.json",
+      "seconds": 59.7
+    },
+    {
+      "case": "camel-short-numbers",
+      "expected": "BROKEN",
+      "run": 1,
+      "verdict": "BROKEN",
+      "reason": "The pinned behaviour camelcase-afternumber-handles-multiple-digit-letter-sequence held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.026981,
+      "run_id": "20261027-214308-c75acc",
+      "silent": [
+        "camelcase-afternumber-handles-multiple-digit-letter-sequence"
+      ],
+      "intended": [
+        "camelcase-two-digit-number-word-boundary-multiple-digits",
+        "camelcase-two-digit-number-word-boundary-adjacent-no-delimit",
+        "camelcase-afternumber-preserves-first-word-lowercase",
+        "camelcase-afternumber-affects-subsequent-words"
+      ],
+      "pinned": 18,
+      "repaired": 1,
+      "dropped": 0,
+      "probed": [
+        "camelcase-afternumber-preserves-first-word-lowercase",
+        "camelcase-afternumber-affects-subsequent-words",
+        "camelcase-afternumber-handles-multiple-digit-letter-sequence",
+        "camelcase-afternumber-leaves-trailing-digits-unchanged",
+        "camelcase-afternumber-ignores-non-letter-after-digits",
+        "camelcase-afternumber-works-with-mixed-delimiters"
+      ],
+      "sandbox_seconds": 27.1,
+      "bundle": "20261027-214308-c75acc/bundle.json",
+      "seconds": 71.3
+    },
+    {
+      "case": "camel-short-numbers",
+      "expected": "BROKEN",
+      "run": 2,
+      "verdict": "INCONCLUSIVE",
+      "reason": "sandbox failed during base: sandbox call failed: ApiTimeoutError(request=RequestInfo(url='https://api.tokenfactory.nebius.com/sandboxes/v1/files/9c2cb46c1457859b19e46857514fe32fe85d4a4376c4b35a79da05210a275db5', method='GET'), response=None, timeout_type='connect')",
+      "cost_usd": 0.001862,
+      "run_id": "20261027-214721-72f356",
+      "silent": [],
+      "intended": [],
+      "pinned": 12,
+      "repaired": 0,
+      "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 23.1,
+      "bundle": "20261027-214721-72f356/bundle.json",
+      "seconds": 45.7
+    },
+    {
+      "case": "camel-short-numbers",
+      "expected": "BROKEN",
+      "run": 3,
+      "verdict": "BROKEN",
+      "reason": "The pinned behaviour camelcase-leading-number-handling held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.041077,
+      "run_id": "20261027-215059-0622fb",
+      "silent": [
+        "camelcase-leading-number-handling"
       ],
       "intended": [
         "camelcase-two-digit-number-word-boundary",
-        "camelcase-multiple-digit-groups"
+        "camelcase-mixed-delimiters-and-numbers"
       ],
-      "pinned": 6,
+      "pinned": 12,
       "repaired": 3,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 20.5,
-      "bundle": "20261027-213149-c0f82d/bundle.json",
-      "seconds": 42.9
-    },
-    {
-      "case": "camel-long-numbers-announced",
-      "expected": "CONSERVED",
-      "run": 3,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour camelcase-number-sequence-across-delimiters-no-effect held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.020629,
-      "run_id": "20261027-213529-cf973d",
-      "silent": [
-        "camelcase-number-sequence-across-delimiters-no-effect"
-      ],
-      "intended": [
-        "camelcase-number-two-or-more-digits-ends-word-before-capital",
-        "camelcase-number-three-or-more-digits-ends-word",
-        "camelcase-multiple-number-sequences-in-word"
-      ],
-      "pinned": 13,
-      "repaired": 2,
-      "dropped": 0,
-      "probed": [
-        "camelcase-number-two-or-more-digits-ends-word-before-capital",
-        "camelcase-number-one-digit-no-effect",
-        "camelcase-number-three-or-more-digits-ends-word",
-        "camelcase-number-at-end-of-word-no-effect",
-        "camelcase-multiple-number-sequences-in-word",
-        "camelcase-number-sequence-across-delimiters-no-effect"
-      ],
-      "sandbox_seconds": 29.2,
-      "bundle": "20261027-213529-cf973d/bundle.json",
-      "seconds": 60.9
-    },
-    {
-      "case": "camel-short-numbers",
-      "expected": "BROKEN",
-      "run": 1,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour camelcase-number-one-digit-does-not-end-word held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.01644,
-      "run_id": "20261027-212850-bbe6e0",
-      "silent": [
-        "camelcase-number-one-digit-does-not-end-word"
-      ],
-      "intended": [
-        "camelcase-number-two-plus-digits-ends-word-before-alpha",
-        "camelcase-number-two-plus-digits-multiple-occurrences",
-        "camelcase-number-two-plus-digits-after-first-word",
-        "camelcase-number-two-plus-digits-with-mixed-delimiters"
-      ],
-      "pinned": 16,
-      "repaired": 3,
-      "dropped": 1,
-      "probed": [
-        "camelcase-number-two-plus-digits-ends-word-before-alpha",
-        "camelcase-number-one-digit-does-not-end-word",
-        "camelcase-number-two-plus-digits-at-end-no-change",
-        "camelcase-number-two-plus-digits-multiple-occurrences",
-        "camelcase-number-two-plus-digits-after-first-word",
-        "camelcase-number-two-plus-digits-with-mixed-delimiters"
-      ],
-      "sandbox_seconds": 29.4,
-      "bundle": "20261027-212850-bbe6e0/bundle.json",
-      "seconds": 64.1
-    },
-    {
-      "case": "camel-short-numbers",
-      "expected": "BROKEN",
-      "run": 2,
-      "verdict": "BROKEN",
-      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: camelcase-multiple-digit-sequences-in-word, camelcase-first-word-digit-sequence-followed-by-letter.",
-      "cost_usd": 0.044865,
-      "run_id": "20261027-213152-69b299",
-      "silent": [
-        "camelcase-multiple-digit-sequences-in-word",
-        "camelcase-first-word-digit-sequence-followed-by-letter"
-      ],
-      "intended": [
-        "camelcase-digits-with-letters",
-        "camelcase-number-in-middle-of-word-capitalized-following-let",
-        "camelcase-digit-sequence-followed-by-uppercase"
-      ],
-      "pinned": 16,
-      "repaired": 1,
-      "dropped": 0,
-      "probed": [
-        "camelcase-number-in-middle-of-word-capitalized-following-let",
-        "camelcase-number-at-end-no-following-letter",
-        "camelcase-multiple-digit-sequences-in-word",
-        "camelcase-digit-sequence-followed-by-uppercase",
-        "camelcase-first-word-digit-sequence-followed-by-letter",
-        "camelcase-non-alphanumeric-after-digit-sequence"
-      ],
-      "sandbox_seconds": 29.9,
-      "bundle": "20261027-213152-69b299/bundle.json",
-      "seconds": 105.7
-    },
-    {
-      "case": "camel-short-numbers",
-      "expected": "BROKEN",
-      "run": 3,
-      "verdict": "BROKEN",
-      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: camelcase-numbers-in-words, camelcase-leading-trailing-numbers.",
-      "cost_usd": 0.018038,
-      "run_id": "20261027-213600-ae19d9",
-      "silent": [
-        "camelcase-numbers-in-words",
-        "camelcase-leading-trailing-numbers"
-      ],
-      "intended": [],
-      "pinned": 11,
-      "repaired": 2,
-      "dropped": 0,
-      "probed": [],
-      "sandbox_seconds": 17.9,
-      "bundle": "20261027-213600-ae19d9/bundle.json",
-      "seconds": 46.2
+      "sandbox_seconds": 18.4,
+      "bundle": "20261027-215059-0622fb/bundle.json",
+      "seconds": 64.7
     },
     {
       "case": "cart-threshold-only",
       "expected": "CONSERVED",
       "run": 1,
       "verdict": "CONSERVED",
-      "reason": "All 8 pinned behaviours were checked: 5 still hold on head, and 3 changed exactly as the pull request announced.",
-      "cost_usd": 0.018054,
-      "run_id": "20261027-212925-bfc06e",
+      "reason": "All 7 pinned behaviours were checked: 4 still hold on head, and 3 changed exactly as the pull request announced.",
+      "cost_usd": 0.015071,
+      "run_id": "20261027-214416-a78705",
       "silent": [],
       "intended": [
-        "order-total-excludes-shipping-fee-at-threshold",
-        "order-total-excludes-shipping-fee-above-threshold",
+        "order-total-excludes-shipping-when-at-threshold-after-discou",
+        "order-total-excludes-shipping-when-above-threshold-after-dis",
+        "shipping-for-between-old-and-new-threshold-charges-fee"
+      ],
+      "pinned": 7,
+      "repaired": 0,
+      "dropped": 4,
+      "probed": [
+        "shipping-for-between-old-and-new-threshold-charges-fee"
+      ],
+      "sandbox_seconds": 22.5,
+      "bundle": "20261027-214416-a78705/bundle.json",
+      "seconds": 49.7
+    },
+    {
+      "case": "cart-threshold-only",
+      "expected": "CONSERVED",
+      "run": 2,
+      "verdict": "CONSERVED",
+      "reason": "All 6 pinned behaviours were checked: 5 still hold on head, and 1 changed exactly as the pull request announced.",
+      "cost_usd": 0.009019,
+      "run_id": "20261027-214752-f989c2",
+      "silent": [],
+      "intended": [
+        "order-total-excludes-shipping-when-subtotal-discounted-at-or"
+      ],
+      "pinned": 6,
+      "repaired": 1,
+      "dropped": 3,
+      "probed": [
+        "shipping-for-between-old-and-new-threshold-applies-fee"
+      ],
+      "sandbox_seconds": 25.3,
+      "bundle": "20261027-214752-f989c2/bundle.json",
+      "seconds": 45.5
+    },
+    {
+      "case": "cart-threshold-only",
+      "expected": "CONSERVED",
+      "run": 3,
+      "verdict": "CONSERVED",
+      "reason": "All 8 pinned behaviours were checked: 5 still hold on head, and 3 changed exactly as the pull request announced.",
+      "cost_usd": 0.010842,
+      "run_id": "20261027-215121-101c85",
+      "silent": [],
+      "intended": [
+        "order-total-excludes-shipping-at-threshold",
+        "order-total-excludes-shipping-above-threshold",
         "order-total-includes-shipping-fee-between-old-and-new-thresh"
       ],
       "pinned": 8,
       "repaired": 0,
-      "dropped": 2,
+      "dropped": 0,
       "probed": [
-        "shipping-for-between-old-and-new-threshold-charges-fee-base",
+        "shipping-fee-applied-between-old-and-new-threshold",
         "order-total-includes-shipping-fee-between-old-and-new-thresh"
       ],
-      "sandbox_seconds": 19.5,
-      "bundle": "20261027-212925-bfc06e/bundle.json",
-      "seconds": 47.0
-    },
-    {
-      "case": "cart-threshold-only",
-      "expected": "CONSERVED",
-      "run": 2,
-      "verdict": "CONSERVED",
-      "reason": "All 7 pinned behaviours were checked: 4 still hold on head, and 3 changed exactly as the pull request announced.",
-      "cost_usd": 0.016427,
-      "run_id": "20261027-213222-a8fbbe",
-      "silent": [],
-      "intended": [
-        "order-total-excludes-shipping-when-at-threshold",
-        "order-total-excludes-shipping-when-above-threshold",
-        "shipping-for-between-old-and-new-threshold-charges-fee"
-      ],
-      "pinned": 7,
-      "repaired": 0,
-      "dropped": 1,
-      "probed": [
-        "shipping-for-between-old-and-new-threshold-charges-fee"
-      ],
-      "sandbox_seconds": 22.8,
-      "bundle": "20261027-213222-a8fbbe/bundle.json",
-      "seconds": 52.9
-    },
-    {
-      "case": "cart-threshold-only",
-      "expected": "CONSERVED",
-      "run": 3,
-      "verdict": "CONSERVED",
-      "reason": "All 9 pinned behaviours were checked: 8 still hold on head, and 1 changed exactly as the pull request announced.",
-      "cost_usd": 0.014444,
-      "run_id": "20261027-213619-dab508",
-      "silent": [],
-      "intended": [
-        "cart-order-total-applies-discount-then-shipping"
-      ],
-      "pinned": 9,
-      "repaired": 0,
-      "dropped": 8,
-      "probed": [],
-      "sandbox_seconds": 13.0,
-      "bundle": "20261027-213619-dab508/bundle.json",
-      "seconds": 37.8
+      "sandbox_seconds": 21.8,
+      "bundle": "20261027-215121-101c85/bundle.json",
+      "seconds": 39.8
     },
     {
       "case": "duration-cut-to-round",
       "expected": "BROKEN",
       "run": 1,
       "verdict": "BROKEN",
-      "reason": "6 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-exactly-one-second, format-duration-just-under-minute, format-duration-minutes-and-seconds and 3 more.",
-      "cost_usd": 0.020785,
-      "run_id": "20261027-212937-92be09",
+      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-just-under-minute, format-duration-seconds-truncation.",
+      "cost_usd": 0.011853,
+      "run_id": "20261027-214419-885af3",
       "silent": [
-        "format-duration-exactly-one-second",
         "format-duration-just-under-minute",
-        "format-duration-minutes-and-seconds",
-        "format-duration-hours-minutes-seconds",
-        "format-duration-days-hours-minutes-seconds",
-        "format-duration-seconds-cut-not-rounded"
+        "format-duration-seconds-truncation"
       ],
       "intended": [],
-      "pinned": 10,
-      "repaired": 10,
+      "pinned": 11,
+      "repaired": 7,
       "dropped": 1,
       "probed": [],
-      "sandbox_seconds": 19.5,
-      "bundle": "20261027-212937-92be09/bundle.json",
-      "seconds": 55.7
+      "sandbox_seconds": 20.9,
+      "bundle": "20261027-214419-885af3/bundle.json",
+      "seconds": 53.7
     },
     {
       "case": "duration-cut-to-round",
       "expected": "BROKEN",
       "run": 2,
       "verdict": "BROKEN",
-      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-tenths-edge-case-95, format-duration-tenths-edge-case-94.",
-      "cost_usd": 0.032341,
-      "run_id": "20261027-213232-140d70",
+      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-less-than-one-second, format-duration-monotonic-non-decreasing.",
+      "cost_usd": 0.015045,
+      "run_id": "20261027-214756-0e1503",
       "silent": [
-        "format-duration-tenths-edge-case-95",
-        "format-duration-tenths-edge-case-94"
+        "format-duration-less-than-one-second",
+        "format-duration-monotonic-non-decreasing"
       ],
-      "intended": [
-        "format-duration-just-under-minute",
-        "format-duration-seconds-truncation"
-      ],
-      "pinned": 12,
-      "repaired": 9,
-      "dropped": 5,
-      "probed": [
-        "format-duration-tenths-edge-case-95",
-        "format-duration-tenths-edge-case-94"
-      ],
-      "sandbox_seconds": 34.1,
-      "bundle": "20261027-213232-140d70/bundle.json",
-      "seconds": 88.2
+      "intended": [],
+      "pinned": 8,
+      "repaired": 10,
+      "dropped": 4,
+      "probed": [],
+      "sandbox_seconds": 20.5,
+      "bundle": "20261027-214756-0e1503/bundle.json",
+      "seconds": 57.7
     },
     {
       "case": "duration-cut-to-round",
       "expected": "BROKEN",
       "run": 3,
       "verdict": "BROKEN",
-      "reason": "2 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-just-under-minute, format-duration-days-hours-minutes-seconds.",
-      "cost_usd": 0.018304,
-      "run_id": "20261027-213630-1badb2",
+      "reason": "3 pinned behaviours held on base and fail on head without the pull request announcing them: format-duration-less-than-one-second, format-duration-just-under-minute, format-duration-seconds-truncation.",
+      "cost_usd": 0.010006,
+      "run_id": "20261027-215142-d6aec0",
       "silent": [
+        "format-duration-less-than-one-second",
         "format-duration-just-under-minute",
-        "format-duration-days-hours-minutes-seconds"
+        "format-duration-seconds-truncation"
       ],
       "intended": [],
-      "pinned": 7,
-      "repaired": 9,
-      "dropped": 6,
+      "pinned": 11,
+      "repaired": 3,
+      "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 20.1,
-      "bundle": "20261027-213630-1badb2/bundle.json",
-      "seconds": 51.0
+      "sandbox_seconds": 16.7,
+      "bundle": "20261027-215142-d6aec0/bundle.json",
+      "seconds": 34.0
     },
     {
       "case": "duration-rounding-announced",
       "expected": "CONSERVED",
       "run": 1,
       "verdict": "CONSERVED",
-      "reason": "All 15 pinned behaviours were checked: 9 still hold on head, and 6 changed exactly as the pull request announced.",
-      "cost_usd": 0.024649,
-      "run_id": "20261027-212948-018c0a",
+      "reason": "All 8 pinned behaviours were checked: 4 still hold on head, and 4 changed exactly as the pull request announced.",
+      "cost_usd": 0.018438,
+      "run_id": "20261027-214424-60dfb3",
       "silent": [],
       "intended": [
-        "format-duration-less-than-one-second-cut-off",
-        "format-duration-just-below-one-second",
-        "format-duration-rounding-up-to-next-tenth",
-        "format-duration-rounding-half-up",
-        "format-duration-rounding-across-second-boundary",
-        "format-duration-rounding-with-minutes"
+        "format-duration-cuts-seconds-down-to-tenth",
+        "format-duration-shows-zero-for-sub-100ms",
+        "format-duration-shows-seconds-even-when-zero-if-no-higher-pa",
+        "format-duration-preserves-input-type-for-valid-numbers"
       ],
-      "pinned": 15,
-      "repaired": 7,
-      "dropped": 4,
-      "probed": [
-        "format-duration-rounding-up-to-next-tenth",
-        "format-duration-rounding-down-below-half",
-        "format-duration-rounding-half-up",
-        "format-duration-rounding-across-second-boundary",
-        "format-duration-rounding-with-minutes",
-        "format-duration-rounding-idempotent"
-      ],
-      "sandbox_seconds": 27.5,
-      "bundle": "20261027-212948-018c0a/bundle.json",
-      "seconds": 72.5
+      "pinned": 8,
+      "repaired": 4,
+      "dropped": 2,
+      "probed": [],
+      "sandbox_seconds": 43.7,
+      "bundle": "20261027-214424-60dfb3/bundle.json",
+      "seconds": 82.6
     },
     {
       "case": "duration-rounding-announced",
@@ -873,590 +836,590 @@
       "run": 2,
       "verdict": "CONSERVED",
       "reason": "All 14 pinned behaviours were checked: 7 still hold on head, and 7 changed exactly as the pull request announced.",
-      "cost_usd": 0.027163,
-      "run_id": "20261027-213245-3a8a7e",
+      "cost_usd": 0.025718,
+      "run_id": "20261027-214807-37d5fc",
       "silent": [],
       "intended": [
-        "format-duration-less-than-one-second-cut-behaviour",
-        "format-duration-at-half-tenth-boundary",
-        "format-duration-just-above-half-tenth",
-        "format-duration-round-up-from-half-tenth",
-        "format-duration-round-up-to-whole-second",
-        "format-duration-round-down-from-whole-second",
-        "format-duration-rounding-edge-at-950ms"
+        "format-duration-just-below-one-second-stays-zero-point-nine",
+        "format-duration-minutes-and-seconds",
+        "format-duration-hours-minutes-seconds",
+        "format-duration-days-hours-minutes-seconds",
+        "format-duration-rounding-up-to-next-tenth",
+        "format-duration-rounding-up-at-exact-halfway",
+        "format-duration-ninety-four-milliseconds-rounds-down"
       ],
       "pinned": 14,
       "repaired": 7,
-      "dropped": 4,
+      "dropped": 3,
       "probed": [
-        "format-duration-round-up-from-half-tenth",
-        "format-duration-round-down-below-half-tenth",
-        "format-duration-round-up-to-whole-second",
-        "format-duration-round-down-from-whole-second",
-        "format-duration-rounding-edge-at-950ms"
+        "format-duration-rounding-up-to-next-tenth",
+        "format-duration-rounding-down-from-halfway",
+        "format-duration-rounding-up-at-exact-halfway",
+        "format-duration-no-units-only-seconds-rounded",
+        "format-duration-five-milliseconds-rounds-up",
+        "format-duration-ninety-four-milliseconds-rounds-down"
       ],
-      "sandbox_seconds": 31.5,
-      "bundle": "20261027-213245-3a8a7e/bundle.json",
-      "seconds": 77.1
+      "sandbox_seconds": 39.3,
+      "bundle": "20261027-214807-37d5fc/bundle.json",
+      "seconds": 109.6
     },
     {
       "case": "duration-rounding-announced",
       "expected": "CONSERVED",
       "run": 3,
       "verdict": "CONSERVED",
-      "reason": "All 17 pinned behaviours were checked: 10 still hold on head, and 7 changed exactly as the pull request announced.",
-      "cost_usd": 0.025229,
-      "run_id": "20261027-213647-1a216f",
+      "reason": "All 9 pinned behaviours were checked: 5 still hold on head, and 4 changed exactly as the pull request announced.",
+      "cost_usd": 0.026136,
+      "run_id": "20261027-215144-d0e0c4",
       "silent": [],
       "intended": [
-        "format-duration-cuts-seconds-down-to-one-decimal-place",
-        "format-duration-handles-nine-hundred-ninety-nine-millisecond",
-        "format-duration-handles-fifty-nine-seconds-nine-hundred-nine",
-        "format-duration-handles-one-hour-minus-one-millisecond",
+        "format-duration-cuts-seconds-truncation-behavior",
+        "format-duration-handles-values-just-below-tenth-boundary",
         "format-duration-rounds-up-at-halfway-point",
-        "format-duration-rounds-to-next-second-at-995ms",
-        "format-duration-advances-to-one-second-at-50ms"
+        "format-duration-rounds-to-nearest-tenth-with-higher-units"
       ],
-      "pinned": 17,
-      "repaired": 9,
-      "dropped": 1,
+      "pinned": 9,
+      "repaired": 8,
+      "dropped": 9,
       "probed": [
         "format-duration-rounds-up-at-halfway-point",
         "format-duration-rounds-down-below-halfway",
-        "format-duration-rounds-to-next-second-at-995ms",
-        "format-duration-stays-at-zero-seconds-below-50ms",
-        "format-duration-advances-to-one-second-at-50ms"
+        "format-duration-rounds-to-nearest-tenth-with-higher-units"
       ],
-      "sandbox_seconds": 28.9,
-      "bundle": "20261027-213647-1a216f/bundle.json",
-      "seconds": 70.0
+      "sandbox_seconds": 33.5,
+      "bundle": "20261027-215144-d0e0c4/bundle.json",
+      "seconds": 80.7
     },
     {
       "case": "hopper",
       "expected": "BROKEN",
       "run": 1,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour air-control-reduces-acceleration held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.016233,
-      "run_id": "20261027-212954-98ce82",
-      "silent": [
-        "air-control-reduces-acceleration"
-      ],
+      "verdict": "INCONCLUSIVE",
+      "reason": "sandbox failed during base: sandbox call failed: ApiTimeoutError(request=RequestInfo(url='https://api.tokenfactory.nebius.com/sandboxes/v1/files/f404e9fe87ebc005a97695d4043fcbf862ac859ce647885dec9ab9407dedda44', method='GET'), response=None, timeout_type='connect')",
+      "cost_usd": 0.013845,
+      "run_id": "20261027-214448-c34c86",
+      "silent": [],
       "intended": [],
-      "pinned": 8,
-      "repaired": 4,
-      "dropped": 3,
+      "pinned": 11,
+      "repaired": 0,
+      "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 19.9,
-      "bundle": "20261027-212954-98ce82/bundle.json",
-      "seconds": 54.6
+      "sandbox_seconds": 25.6,
+      "bundle": "20261027-214448-c34c86/bundle.json",
+      "seconds": 66.0
     },
     {
       "case": "hopper",
       "expected": "BROKEN",
       "run": 2,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour air-control-reduces-horizontal-acceleration held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.02579,
-      "run_id": "20261027-213315-cadc11",
+      "reason": "The pinned behaviour horizontal-movement-applies-air-control held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.023494,
+      "run_id": "20261027-214807-bc1a8b",
       "silent": [
-        "air-control-reduces-horizontal-acceleration"
+        "horizontal-movement-applies-air-control"
       ],
       "intended": [],
       "pinned": 7,
-      "repaired": 11,
+      "repaired": 9,
       "dropped": 5,
       "probed": [],
-      "sandbox_seconds": 21.8,
-      "bundle": "20261027-213315-cadc11/bundle.json",
-      "seconds": 68.3
+      "sandbox_seconds": 24.4,
+      "bundle": "20261027-214807-bc1a8b/bundle.json",
+      "seconds": 84.6
     },
     {
       "case": "hopper",
       "expected": "BROKEN",
       "run": 3,
       "verdict": "CONSERVED",
-      "reason": "All 2 pinned behaviours were checked: 2 still hold on head.",
-      "cost_usd": 0.036953,
-      "run_id": "20261027-213648-2389e3",
+      "reason": "All 8 pinned behaviours were checked: 8 still hold on head.",
+      "cost_usd": 0.018805,
+      "run_id": "20261027-215201-017749",
       "silent": [],
       "intended": [],
-      "pinned": 2,
-      "repaired": 11,
-      "dropped": 15,
-      "probed": [
-        "grounded-check-changes-standing-on-assignment",
-        "stop-friction-applies-when-no-input-held"
-      ],
-      "sandbox_seconds": 25.4,
-      "bundle": "20261027-213648-2389e3/bundle.json",
-      "seconds": 100.2
+      "pinned": 8,
+      "repaired": 8,
+      "dropped": 9,
+      "probed": [],
+      "sandbox_seconds": 21.4,
+      "bundle": "20261027-215201-017749/bundle.json",
+      "seconds": 64.0
     },
     {
       "case": "paginate-past-the-end",
       "expected": "BROKEN",
       "run": 1,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour paginate-empty-list-zero-pages held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.006231,
-      "run_id": "20261027-213012-a7cf83",
+      "reason": "The pinned behaviour paginate-page-past-end-returns-empty-slice held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.00471,
+      "run_id": "20261027-214506-7252d1",
       "silent": [
-        "paginate-empty-list-zero-pages"
+        "paginate-page-past-end-returns-empty-slice"
       ],
       "intended": [],
       "pinned": 12,
       "repaired": 0,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 14.8,
-      "bundle": "20261027-213012-a7cf83/bundle.json",
-      "seconds": 31.8
+      "sandbox_seconds": 13.4,
+      "bundle": "20261027-214506-7252d1/bundle.json",
+      "seconds": 48.5
     },
     {
       "case": "paginate-past-the-end",
       "expected": "BROKEN",
       "run": 2,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour paginate-page-past-end-returns-empty held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.013176,
-      "run_id": "20261027-213338-1fcdd6",
+      "reason": "The pinned behaviour paginate-end-clamping-preserved held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.015249,
+      "run_id": "20261027-214837-ac2b29",
       "silent": [
-        "paginate-page-past-end-returns-empty"
+        "paginate-end-clamping-preserved"
       ],
       "intended": [],
-      "pinned": 12,
+      "pinned": 15,
       "repaired": 6,
-      "dropped": 0,
-      "probed": [],
-      "sandbox_seconds": 21.8,
-      "bundle": "20261027-213338-1fcdd6/bundle.json",
-      "seconds": 57.4
+      "dropped": 3,
+      "probed": [
+        "paginate-start-calculation-after-refactor",
+        "paginate-end-clamping-preserved",
+        "paginate-hasnext-logic-unaffected"
+      ],
+      "sandbox_seconds": 38.7,
+      "bundle": "20261027-214837-ac2b29/bundle.json",
+      "seconds": 76.0
     },
     {
       "case": "paginate-past-the-end",
       "expected": "BROKEN",
       "run": 3,
-      "verdict": "CONSERVED",
-      "reason": "All 8 pinned behaviours were checked: 7 still hold on head, and 1 changed exactly as the pull request announced.",
-      "cost_usd": 0.015574,
-      "run_id": "20261027-213657-516ece",
-      "silent": [],
-      "intended": [
-        "paginate-page-past-end-returns-empty"
+      "verdict": "BROKEN",
+      "reason": "The pinned behaviour paginate-page-past-end-empty held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.006481,
+      "run_id": "20261027-215204-e308fe",
+      "silent": [
+        "paginate-page-past-end-empty"
       ],
-      "pinned": 8,
-      "repaired": 6,
-      "dropped": 10,
-      "probed": [
-        "paginate-invalid-perpage-non-integer-throws-range-error",
-        "paginate-invalid-perpage-less-than-one-throws-range-error"
-      ],
-      "sandbox_seconds": 33.1,
-      "bundle": "20261027-213657-516ece/bundle.json",
-      "seconds": 67.5
+      "intended": [],
+      "pinned": 11,
+      "repaired": 1,
+      "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 17.3,
+      "bundle": "20261027-215204-e308fe/bundle.json",
+      "seconds": 32.9
     },
     {
       "case": "slug-acronym-plurals",
       "expected": "BROKEN",
       "run": 1,
-      "verdict": "CONSERVED",
-      "reason": "All 15 pinned behaviours were checked: 12 still hold on head, and 3 changed exactly as the pull request announced.",
-      "cost_usd": 0.011788,
-      "run_id": "20261027-213033-654b26",
+      "verdict": "INCONCLUSIVE",
+      "reason": "sandbox failed during base: cannot get the sandbox image noether-node24-slim: ApiTimeoutError(request=RequestInfo(url='https://api.tokenfactory.nebius.com/sandboxes/v1/inspect/?tag=noether-node24-slim', method='GET'), response=None, timeout_type='connect')",
+      "cost_usd": 0.00169,
+      "run_id": "20261027-214512-bd1572",
       "silent": [],
+      "intended": [],
+      "pinned": 12,
+      "repaired": 0,
+      "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 0.0,
+      "bundle": "20261027-214512-bd1572/bundle.json",
+      "seconds": 31.1
+    },
+    {
+      "case": "slug-acronym-plurals",
+      "expected": "BROKEN",
+      "run": 2,
+      "verdict": "CONSERVED",
+      "reason": "All 14 pinned behaviours were checked: 13 still hold on head, and 1 changed exactly as the pull request announced.",
+      "cost_usd": 0.020014,
+      "run_id": "20261027-214853-bf37e6",
+      "silent": [],
+      "intended": [
+        "slugify-acronym-plurals-kept-together"
+      ],
+      "pinned": 14,
+      "repaired": 7,
+      "dropped": 2,
+      "probed": [
+        "slugify-does-not-split-apostrophe-s-after-uppercase-sequence",
+        "slugify-does-not-split-uppercase-sequence-followed-by-s-only",
+        "slugify-splits-uppercase-sequence-followed-by-uppercase-and-",
+        "slugify-preserves-lowercase-a-through-q-after-uppercase-sequ",
+        "slugify-handles-mixed-case-with-s-exclusion-in-acronym-split"
+      ],
+      "sandbox_seconds": 31.7,
+      "bundle": "20261027-214853-bf37e6/bundle.json",
+      "seconds": 99.2
+    },
+    {
+      "case": "slug-acronym-plurals",
+      "expected": "BROKEN",
+      "run": 3,
+      "verdict": "BROKEN",
+      "reason": "3 pinned behaviours held on base and fail on head without the pull request announcing them: slugify-xml-with-lowercase-m-after-acronym, slugify-htm-with-lowercase-l-after-acronym, slugify-ssi-with-lowercase-o-after-acronym.",
+      "cost_usd": 0.020088,
+      "run_id": "20261027-215216-ad699a",
+      "silent": [
+        "slugify-xml-with-lowercase-m-after-acronym",
+        "slugify-htm-with-lowercase-l-after-acronym",
+        "slugify-ssi-with-lowercase-o-after-acronym"
+      ],
       "intended": [
         "slugify-acronym-plural-keeps-together",
-        "slugify-api-s-plural-kept-together-base",
-        "slugify-urls-plural-kept-together-base"
+        "slugify-api-with-lowercase-s-after-acronym",
+        "slugify-urls-with-lowercase-e-after-acronym"
       ],
-      "pinned": 15,
+      "pinned": 17,
       "repaired": 3,
-      "dropped": 0,
+      "dropped": 1,
       "probed": [
-        "slugify-api-s-plural-kept-together-base",
-        "slugify-urls-plural-kept-together-base",
-        "slugify-acronym-s-not-split-before-s-base"
+        "slugify-api-with-lowercase-s-after-acronym",
+        "slugify-urls-with-lowercase-e-after-acronym",
+        "slugify-xml-with-lowercase-m-after-acronym",
+        "slugify-htm-with-lowercase-l-after-acronym",
+        "slugify-ssi-with-lowercase-o-after-acronym",
+        "slugify-keep-acronym-group-intact-before-vowel-except-s"
       ],
-      "sandbox_seconds": 22.6,
-      "bundle": "20261027-213033-654b26/bundle.json",
-      "seconds": 47.7
-    },
-    {
-      "case": "slug-acronym-plurals",
-      "expected": "BROKEN",
-      "run": 2,
-      "verdict": "CONSERVED",
-      "reason": "All 18 pinned behaviours were checked: 17 still hold on head, and 1 changed exactly as the pull request announced.",
-      "cost_usd": 0.025663,
-      "run_id": "20261027-213400-8c938c",
-      "silent": [],
-      "intended": [
-        "slugify-acronym-plural-keeps-together"
-      ],
-      "pinned": 18,
-      "repaired": 2,
-      "dropped": 0,
-      "probed": [
-        "slugify-handles-lowercase-a-exception-in-regex",
-        "slugify-handles-uppercase-s-followed-by-lowercase",
-        "slugify-handles-uppercase-t-followed-by-lowercase",
-        "slugify-handles-uppercase-u-followed-by-lowercase",
-        "slugify-handles-uppercase-r-followed-by-lowercase",
-        "slugify-handles-digit-after-uppercase-sequence"
-      ],
-      "sandbox_seconds": 26.9,
-      "bundle": "20261027-213400-8c938c/bundle.json",
-      "seconds": 138.8
-    },
-    {
-      "case": "slug-acronym-plurals",
-      "expected": "BROKEN",
-      "run": 3,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour slugify-mixed-acronyms-with-s-and-non-s held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.011805,
-      "run_id": "20261027-213721-4a3ddb",
-      "silent": [
-        "slugify-mixed-acronyms-with-s-and-non-s"
-      ],
-      "intended": [
-        "slugify-api-plural-keeps-acronym-together",
-        "slugify-urls-plural-keeps-acronym-together"
-      ],
-      "pinned": 6,
-      "repaired": 0,
-      "dropped": 0,
-      "probed": [
-        "slugify-api-plural-keeps-acronym-together",
-        "slugify-urls-plural-keeps-acronym-together",
-        "slugify-api-singular-splits-acronym",
-        "slugify-urls-singular-splits-acronym",
-        "slugify-mixed-acronyms-with-s-and-non-s",
-        "slugify-non-acronym-upper-lower-unaffected"
-      ],
-      "sandbox_seconds": 14.8,
-      "bundle": "20261027-213721-4a3ddb/bundle.json",
-      "seconds": 33.0
+      "sandbox_seconds": 27.2,
+      "bundle": "20261027-215216-ad699a/bundle.json",
+      "seconds": 55.6
     },
     {
       "case": "slug-underscore-announced",
       "expected": "CONSERVED",
       "run": 1,
       "verdict": "CONSERVED",
-      "reason": "All 18 pinned behaviours were checked: 5 still hold on head, and 13 changed exactly as the pull request announced.",
-      "cost_usd": 0.018465,
-      "run_id": "20261027-213044-293a2b",
+      "reason": "All 15 pinned behaviours were checked: 4 still hold on head, and 11 changed exactly as the pull request announced.",
+      "cost_usd": 0.018295,
+      "run_id": "20261027-214544-512777",
       "silent": [],
       "intended": [
-        "slugify-basic-hyphenation",
+        "slugify-basic-hyphenated",
         "slugify-camelcase-split",
         "slugify-acronym-split",
-        "slugify-multiple-hyphens-collapsed",
-        "slugify-trims-leading-trailing-hyphens",
-        "slugify-numbers-preserved",
-        "slugify-mixed-accented-and-camelcase",
-        "slugify-underscore-instead-of-hyphen-for-camelcase",
-        "slugify-underscore-instead-of-hyphen-for-acronym",
-        "slugify-underscore-instead-of-hyphen-for-separators",
-        "slugify-no-leading-trailing-underscores",
-        "slugify-preserves-numbers-with-underscores",
-        "slugify-handles-accented-characters-with-underscores"
+        "slugify-special-chars-to-hyphen",
+        "slugify-trims-hyphens",
+        "slugify-multiple-words",
+        "slugify-joins-with-underscore-instead-of-hyphen-for-camelcas",
+        "slugify-joins-with-underscore-instead-of-hyphen-for-acronym",
+        "slugify-replaces-non-alphanumeric-runs-with-underscore",
+        "slugify-trims-leading-and-trailing-underscores",
+        "slugify-handles-mixed-accented-and-camelcase"
       ],
-      "pinned": 18,
-      "repaired": 2,
-      "dropped": 0,
+      "pinned": 15,
+      "repaired": 1,
+      "dropped": 1,
       "probed": [
-        "slugify-underscore-instead-of-hyphen-for-camelcase",
-        "slugify-underscore-instead-of-hyphen-for-acronym",
-        "slugify-underscore-instead-of-hyphen-for-separators",
-        "slugify-no-leading-trailing-underscores",
-        "slugify-preserves-numbers-with-underscores",
-        "slugify-handles-accented-characters-with-underscores"
+        "slugify-joins-with-underscore-instead-of-hyphen-for-camelcas",
+        "slugify-joins-with-underscore-instead-of-hyphen-for-acronym",
+        "slugify-replaces-non-alphanumeric-runs-with-underscore",
+        "slugify-trims-leading-and-trailing-underscores",
+        "slugify-handles-mixed-accented-and-camelcase",
+        "slugify-returns-empty-string-for-only-special-chars"
       ],
-      "sandbox_seconds": 30.0,
-      "bundle": "20261027-213044-293a2b/bundle.json",
-      "seconds": 59.4
+      "sandbox_seconds": 40.5,
+      "bundle": "20261027-214544-512777/bundle.json",
+      "seconds": 97.3
     },
     {
       "case": "slug-underscore-announced",
       "expected": "CONSERVED",
       "run": 2,
       "verdict": "CONSERVED",
-      "reason": "All 18 pinned behaviours were checked: 9 still hold on head, and 9 changed exactly as the pull request announced.",
-      "cost_usd": 0.014752,
-      "run_id": "20261027-213402-f6b9e4",
+      "reason": "All 17 pinned behaviours were checked: 5 still hold on head, and 12 changed exactly as the pull request announced.",
+      "cost_usd": 0.0164,
+      "run_id": "20261027-214932-dae7c6",
       "silent": [],
       "intended": [
         "slugify-camelcase-split-with-hyphen",
         "slugify-acronym-split-with-hyphen",
         "slugify-non-alphanumeric-to-hyphen",
         "slugify-trims-leading-trailing-hyphens",
-        "slugify-multiple-hyphens-collapsed",
-        "slugify-leading-and-trailing-non-alphanumeric",
-        "slugify-joins-words-with-underscore-instead-of-hyphen-for-ca",
+        "slugify-multiple-spaces-to-single-hyphen",
+        "slugify-mixed-case-and-symbols",
+        "slugify-preserves-numbers",
+        "slugify-handles-unicode-accent-removal",
+        "slugify-joins-camelcase-with-underscore-instead-of-hyphen",
         "slugify-joins-acronym-with-underscore-instead-of-hyphen",
-        "slugify-replaces-non-alphanumeric-runs-with-underscore"
+        "slugify-replaces-non-alphanumeric-runs-with-underscore",
+        "slugify-converts-multiple-spaces-to-single-underscore"
       ],
-      "pinned": 18,
-      "repaired": 1,
+      "pinned": 17,
+      "repaired": 0,
       "dropped": 0,
       "probed": [
-        "slugify-joins-words-with-underscore-instead-of-hyphen-for-ca",
+        "slugify-joins-camelcase-with-underscore-instead-of-hyphen",
         "slugify-joins-acronym-with-underscore-instead-of-hyphen",
         "slugify-replaces-non-alphanumeric-runs-with-underscore",
         "slugify-trims-leading-trailing-underscores",
-        "slugify-preserves-digits-in-sequences",
-        "slugify-returns-empty-string-for-empty-input"
+        "slugify-converts-multiple-spaces-to-single-underscore"
       ],
-      "sandbox_seconds": 25.5,
-      "bundle": "20261027-213402-f6b9e4/bundle.json",
-      "seconds": 49.6
+      "sandbox_seconds": 21.5,
+      "bundle": "20261027-214932-dae7c6/bundle.json",
+      "seconds": 48.2
     },
     {
       "case": "slug-underscore-announced",
       "expected": "CONSERVED",
       "run": 3,
       "verdict": "CONSERVED",
-      "reason": "All 18 pinned behaviours were checked: 5 still hold on head, and 13 changed exactly as the pull request announced.",
-      "cost_usd": 0.01876,
-      "run_id": "20261027-213754-d4a491",
+      "reason": "All 16 pinned behaviours were checked: 5 still hold on head, and 11 changed exactly as the pull request announced.",
+      "cost_usd": 0.018747,
+      "run_id": "20261027-215236-bd1da0",
       "silent": [],
       "intended": [
-        "slugify-basic-hyphenation",
-        "slugify-camelcase-split",
-        "slugify-acronym-split",
-        "slugify-multiple-hyphens-collapsed",
-        "slugify-trims-leading-trailing-hyphens",
-        "slugify-numbers-preserved",
-        "slugify-accented-characters",
-        "slugify-mixed-alphanumeric-runs",
-        "slugify-underscore-replaces-hyphen-in-camelcase",
-        "slugify-underscore-replaces-hyphen-in-acronym",
-        "slugify-underscore-collapses-multiple-special-chars",
-        "slugify-underscore-trims-leading-trailing",
-        "slugify-underscore-handles-accented-chars"
+        "slugify-basic-lowercase-with-hyphens",
+        "slugify-camelcase-split-with-hyphens",
+        "slugify-acronym-split-with-hyphens",
+        "slugify-multiple-non-alphanumeric-to-single-hyphen",
+        "slugify-trims-leading-and-trailing-hyphens",
+        "slugify-preserves-underscores-as-separators",
+        "slugify-handles-mixed-accented-and-camelcase",
+        "slugify-joins-words-with-underscore-for-camelcase-boundary",
+        "slugify-joins-words-with-underscore-for-acronym-boundary",
+        "slugify-replaces-runs-of-non-alphanumeric-with-single-unders",
+        "slugify-handles-mixed-accented-and-camelcase-with-underscore"
       ],
-      "pinned": 18,
-      "repaired": 0,
-      "dropped": 1,
+      "pinned": 16,
+      "repaired": 1,
+      "dropped": 0,
       "probed": [
-        "slugify-underscore-replaces-hyphen-in-camelcase",
-        "slugify-underscore-replaces-hyphen-in-acronym",
-        "slugify-underscore-collapses-multiple-special-chars",
-        "slugify-underscore-trims-leading-trailing",
-        "slugify-underscore-preserves-digits",
-        "slugify-underscore-handles-accented-chars"
+        "slugify-joins-words-with-underscore-for-camelcase-boundary",
+        "slugify-joins-words-with-underscore-for-acronym-boundary",
+        "slugify-replaces-runs-of-non-alphanumeric-with-single-unders",
+        "slugify-trims-leading-and-trailing-underscores",
+        "slugify-preserves-digits-without-inserting-separators",
+        "slugify-handles-mixed-accented-and-camelcase-with-underscore"
       ],
-      "sandbox_seconds": 24.7,
-      "bundle": "20261027-213754-d4a491/bundle.json",
-      "seconds": 51.7
+      "sandbox_seconds": 25.6,
+      "bundle": "20261027-215236-bd1da0/bundle.json",
+      "seconds": 48.9
     },
     {
       "case": "tiny-cart",
       "expected": "BROKEN",
       "run": 1,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour discount-amount-floors-instead-of-rounds held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.013711,
-      "run_id": "20261027-213049-5a7e4b",
+      "reason": "The pinned behaviour discount-amount-floors-instead-of-rounds-base held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.019337,
+      "run_id": "20261027-214547-71e75d",
       "silent": [
-        "discount-amount-floors-instead-of-rounds"
+        "discount-amount-floors-instead-of-rounds-base"
       ],
       "intended": [
-        "shipping-for-above-threshold-is-free"
+        "order-total-excludes-shipping-when-at-or-above-threshold",
+        "shipping-for-between-50-and-75-applies-fee-base"
       ],
-      "pinned": 10,
-      "repaired": 2,
-      "dropped": 2,
+      "pinned": 14,
+      "repaired": 3,
+      "dropped": 1,
       "probed": [
-        "shipping-for-between-old-and-new-threshold-charges-fee",
-        "discount-amount-floors-instead-of-rounds"
+        "shipping-for-between-50-and-75-applies-fee-base",
+        "discount-amount-floors-instead-of-rounds-base",
+        "order-total-with-discount-edge-case-base",
+        "shipping-for-exactly-75-base",
+        "line-total-handles-fractional-cents-base"
       ],
-      "sandbox_seconds": 29.3,
-      "bundle": "20261027-213049-5a7e4b/bundle.json",
-      "seconds": 57.7
+      "sandbox_seconds": 33.7,
+      "bundle": "20261027-214547-71e75d/bundle.json",
+      "seconds": 82.5
     },
     {
       "case": "tiny-cart",
       "expected": "BROKEN",
       "run": 2,
       "verdict": "BROKEN",
-      "reason": "The pinned behaviour discount-amount-calculates-percent-of-subtotal held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.008247,
-      "run_id": "20261027-213424-915b21",
+      "reason": "The pinned behaviour discount-amount-floors-half-cent-down held on base, fails on head, and the pull request does not announce it.",
+      "cost_usd": 0.012887,
+      "run_id": "20261027-214953-2519bf",
       "silent": [
-        "discount-amount-calculates-percent-of-subtotal"
+        "discount-amount-floors-half-cent-down"
       ],
       "intended": [
-        "order-total-omits-shipping-when-subtotal-at-or-above-thresho"
+        "order-total-excludes-shipping-when-at-or-above-threshold",
+        "shipping-for-between-50-and-75-charges-fee"
       ],
-      "pinned": 10,
-      "repaired": 3,
-      "dropped": 1,
-      "probed": [],
-      "sandbox_seconds": 18.0,
-      "bundle": "20261027-213424-915b21/bundle.json",
-      "seconds": 37.8
+      "pinned": 12,
+      "repaired": 0,
+      "dropped": 2,
+      "probed": [
+        "discount-amount-floors-half-cent-down",
+        "shipping-for-between-50-and-75-charges-fee"
+      ],
+      "sandbox_seconds": 23.6,
+      "bundle": "20261027-214953-2519bf/bundle.json",
+      "seconds": 47.8
     },
     {
       "case": "tiny-cart",
       "expected": "BROKEN",
       "run": 3,
-      "verdict": "BROKEN",
-      "reason": "The pinned behaviour discount-amount-uses-floor-instead-of-round held on base, fails on head, and the pull request does not announce it.",
-      "cost_usd": 0.015594,
-      "run_id": "20261027-213757-e06549",
-      "silent": [
-        "discount-amount-uses-floor-instead-of-round"
-      ],
+      "verdict": "CONSERVED",
+      "reason": "All 7 pinned behaviours were checked: 6 still hold on head, and 1 changed exactly as the pull request announced.",
+      "cost_usd": 0.011538,
+      "run_id": "20261027-215305-2e0e91",
+      "silent": [],
       "intended": [
-        "order-total-excludes-shipping-when-subtotal-discounted-at-or",
-        "order-total-includes-shipping-when-subtotal-discounted-betwe"
+        "shipping-for-changes-at-new-boundary"
       ],
-      "pinned": 13,
-      "repaired": 3,
-      "dropped": 1,
+      "pinned": 7,
+      "repaired": 2,
+      "dropped": 5,
       "probed": [
-        "shipping-for-between-old-and-new-threshold-charges-fee",
-        "order-total-includes-shipping-when-subtotal-discounted-betwe",
-        "discount-amount-uses-floor-instead-of-round"
+        "shipping-for-changes-at-new-boundary",
+        "discount-amount-floor-behavior",
+        "free-shipping-threshold-raised-to-75",
+        "subtotal-handles-empty-cart"
       ],
-      "sandbox_seconds": 25.8,
-      "bundle": "20261027-213757-e06549/bundle.json",
-      "seconds": 56.0
-    },
-    {
-      "case": "uniq-filter-refactor",
-      "expected": "CONSERVED",
-      "run": 1,
-      "verdict": "CONSERVED",
-      "reason": "All 12 pinned behaviours were checked: 12 still hold on head.",
-      "cost_usd": 0.00591,
-      "run_id": "20261027-213100-c7dcd1",
-      "silent": [],
-      "intended": [],
-      "pinned": 12,
-      "repaired": 0,
-      "dropped": 0,
-      "probed": [
-        "uniq-by-filter-implementation-behaviorally-equivalent-to-loo"
-      ],
-      "sandbox_seconds": 26.4,
-      "bundle": "20261027-213100-c7dcd1/bundle.json",
-      "seconds": 49.0
-    },
-    {
-      "case": "uniq-filter-refactor",
-      "expected": "CONSERVED",
-      "run": 2,
-      "verdict": "CONSERVED",
-      "reason": "All 11 pinned behaviours were checked: 11 still hold on head.",
-      "cost_usd": 0.007508,
-      "run_id": "20261027-213435-3ac158",
-      "silent": [],
-      "intended": [],
-      "pinned": 11,
-      "repaired": 1,
-      "dropped": 3,
-      "probed": [
-        "uniq-by-filter-preserves-order-of-first-seen-keys"
-      ],
-      "sandbox_seconds": 28.0,
-      "bundle": "20261027-213435-3ac158/bundle.json",
+      "sandbox_seconds": 28.7,
+      "bundle": "20261027-215305-2e0e91/bundle.json",
       "seconds": 52.9
     },
     {
       "case": "uniq-filter-refactor",
       "expected": "CONSERVED",
-      "run": 3,
+      "run": 1,
       "verdict": "CONSERVED",
-      "reason": "All 13 pinned behaviours were checked: 13 still hold on head.",
-      "cost_usd": 0.004598,
-      "run_id": "20261027-213804-e7b1f2",
+      "reason": "All 11 pinned behaviours were checked: 11 still hold on head.",
+      "cost_usd": 0.002787,
+      "run_id": "20261027-214554-7ae464",
       "silent": [],
       "intended": [],
-      "pinned": 13,
-      "repaired": 1,
+      "pinned": 11,
+      "repaired": 0,
       "dropped": 0,
+      "probed": [],
+      "sandbox_seconds": 18.4,
+      "bundle": "20261027-214554-7ae464/bundle.json",
+      "seconds": 49.8
+    },
+    {
+      "case": "uniq-filter-refactor",
+      "expected": "CONSERVED",
+      "run": 2,
+      "verdict": "CONSERVED",
+      "reason": "All 16 pinned behaviours were checked: 16 still hold on head.",
+      "cost_usd": 0.005887,
+      "run_id": "20261027-214956-1fff5f",
+      "silent": [],
+      "intended": [],
+      "pinned": 16,
+      "repaired": 0,
+      "dropped": 1,
       "probed": [
-        "uniq-by-filter-equivalence-to-loop"
+        "uniq-by-filter-equivalence-to-loop",
+        "uniq-by-filter-side-effect-in-key",
+        "uniq-by-filter-returns-new-array",
+        "uniq-by-filter-with-non-object-items",
+        "uniq-by-filter-order-preservation-guarantee"
       ],
-      "sandbox_seconds": 22.6,
-      "bundle": "20261027-213804-e7b1f2/bundle.json",
-      "seconds": 40.9
+      "sandbox_seconds": 24.4,
+      "bundle": "20261027-214956-1fff5f/bundle.json",
+      "seconds": 46.3
+    },
+    {
+      "case": "uniq-filter-refactor",
+      "expected": "CONSERVED",
+      "run": 3,
+      "verdict": "CONSERVED",
+      "reason": "All 12 pinned behaviours were checked: 12 still hold on head.",
+      "cost_usd": 0.008243,
+      "run_id": "20261027-215305-c0f945",
+      "silent": [],
+      "intended": [],
+      "pinned": 12,
+      "repaired": 7,
+      "dropped": 4,
+      "probed": [
+        "uniq-by-order-preservation-with-sequential-duplicates",
+        "uniq-by-order-preservation-with-interleaved-duplicates",
+        "uniq-by-last-wins-when-key-function-returns-same-value-for-d",
+        "uniq-by-handles-large-input-efficiently",
+        "uniq-by-works-with-undefined-items-in-array",
+        "uniq-by-preserves-order-with-non-string-keys"
+      ],
+      "sandbox_seconds": 26.6,
+      "bundle": "20261027-215305-c0f945/bundle.json",
+      "seconds": 53.6
     },
     {
       "case": "uniq-keeps-last",
       "expected": "BROKEN",
       "run": 1,
       "verdict": "BROKEN",
-      "reason": "3 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence-ordered, uniq-by-all-same-key-returns-first-only, uniq-by-preserves-item-references.",
-      "cost_usd": 0.007877,
-      "run_id": "20261027-213121-0042f6",
+      "reason": "6 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence-order-preserved, uniq-by-all-duplicate-keys-returns-first-only, uniq-by-works-with-string-keys and 3 more.",
+      "cost_usd": 0.010038,
+      "run_id": "20261027-214554-86a6f7",
       "silent": [
-        "uniq-by-keeps-first-occurrence-ordered",
-        "uniq-by-all-same-key-returns-first-only",
-        "uniq-by-preserves-item-references"
+        "uniq-by-keeps-first-occurrence-order-preserved",
+        "uniq-by-all-duplicate-keys-returns-first-only",
+        "uniq-by-works-with-string-keys",
+        "uniq-by-handles-undefined-key-values",
+        "uniq-by-handles-null-key-values",
+        "uniq-by-preserves-items-exactly-as-passed-in"
       ],
       "intended": [],
-      "pinned": 7,
+      "pinned": 12,
       "repaired": 0,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 17.0,
-      "bundle": "20261027-213121-0042f6/bundle.json",
-      "seconds": 31.7
+      "sandbox_seconds": 20.7,
+      "bundle": "20261027-214554-86a6f7/bundle.json",
+      "seconds": 46.5
     },
     {
       "case": "uniq-keeps-last",
       "expected": "BROKEN",
       "run": 2,
       "verdict": "BROKEN",
-      "reason": "6 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence-ordered, uniq-by-all-duplicates-keeps-first-only, uniq-by-works-with-string-keys and 3 more.",
-      "cost_usd": 0.009195,
-      "run_id": "20261027-213452-1bd1d2",
+      "reason": "5 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence, uniq-by-all-duplicates, uniq-by-undefined-key and 2 more.",
+      "cost_usd": 0.011669,
+      "run_id": "20261027-215020-ff4748",
       "silent": [
-        "uniq-by-keeps-first-occurrence-ordered",
-        "uniq-by-all-duplicates-keeps-first-only",
-        "uniq-by-works-with-string-keys",
-        "uniq-by-works-with-nested-object-key",
-        "uniq-by-preserves-original-item-references",
-        "uniq-by-handles-undefined-key-values"
+        "uniq-by-keeps-first-occurrence",
+        "uniq-by-all-duplicates",
+        "uniq-by-undefined-key",
+        "uniq-by-object-key",
+        "uniq-by-preserves-order"
       ],
       "intended": [],
-      "pinned": 11,
-      "repaired": 0,
+      "pinned": 10,
+      "repaired": 1,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 19.2,
-      "bundle": "20261027-213452-1bd1d2/bundle.json",
-      "seconds": 36.9
+      "sandbox_seconds": 18.7,
+      "bundle": "20261027-215020-ff4748/bundle.json",
+      "seconds": 38.5
     },
     {
       "case": "uniq-keeps-last",
       "expected": "BROKEN",
       "run": 3,
       "verdict": "BROKEN",
-      "reason": "7 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence, uniq-by-all-duplicates, uniq-by-key-function-returns-nan and 4 more.",
-      "cost_usd": 0.011261,
-      "run_id": "20261027-213829-bcfe62",
+      "reason": "8 pinned behaviours held on base and fail on head without the pull request announcing them: uniq-by-keeps-first-occurrence, uniq-by-all-duplicates, uniq-by-string-keys and 5 more.",
+      "cost_usd": 0.01668,
+      "run_id": "20261027-215312-d1b2ef",
       "silent": [
         "uniq-by-keeps-first-occurrence",
         "uniq-by-all-duplicates",
-        "uniq-by-key-function-returns-nan",
-        "uniq-by-undefined-keys",
-        "uniq-by-null-keys",
-        "uniq-by-mixed-types",
-        "uniq-by-large-input"
+        "uniq-by-string-keys",
+        "uniq-by-nested-object-key",
+        "uniq-by-undefined-key-handling",
+        "uniq-by-null-key-handling",
+        "uniq-by-mixed-falsy-keys",
+        "uniq-by-order-preservation"
       ],
       "intended": [],
-      "pinned": 12,
-      "repaired": 1,
+      "pinned": 11,
+      "repaired": 0,
       "dropped": 0,
       "probed": [],
-      "sandbox_seconds": 16.3,
-      "bundle": "20261027-213829-bcfe62/bundle.json",
-      "seconds": 36.5
+      "sandbox_seconds": 15.7,
+      "bundle": "20261027-215312-d1b2ef/bundle.json",
+      "seconds": 40.6
     }
   ]
 }
