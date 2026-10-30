@@ -95,7 +95,7 @@ def locate_and_propose(client, change, flip):
 def make_stages(**overrides) -> Stages:
     stages = Stages(read_intent=read_intent, pin_invariants=pin_invariants, judge_flips=judge_flips,
                     locate_and_propose=locate_and_propose, decide=decide, fix_is_proven=fix_is_proven,
-                    write_bundle=write_bundle, repair_invariants=None, probe_invariants=None)
+                    write_bundle=write_bundle, repair_invariants=None, probe_invariants=None, record_cases=None)
     return replace(stages, **overrides)
 
 
@@ -142,3 +142,9 @@ class ScriptedRunner:
     def run_own_suite(self, snap):
         self._step("run_own_suite")
         return self.own.get(snap.label.split(":")[0], m.SuiteResult(True, 0, 6, 0))
+
+    def run_module(self, snap, files, entry):
+        self._step("run_module")
+        self.modules = [*getattr(self, "modules", []), (snap.label, sorted(files), entry)]
+        outputs = getattr(self, "recordings", None) or ["no output"]
+        return outputs[min(len(self.modules) - 1, len(outputs) - 1)]

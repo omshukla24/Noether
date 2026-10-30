@@ -553,3 +553,93 @@ def test_max_probes_zero_turns_the_round_off(tmp_path):
     run_scripted(caps=Caps(max_probes=0), stages=make_stages(probe_invariants=probing(PROBE, asked=asked)), tmp=tmp_path)
 
     assert asked == []
+
+
+# --------------------------------------------------------------- the record-on-base round
+
+REC_META = {"claim": "a price with a half cent", "target_file": "src/cart.js", "target_symbol": "discountAmount"}
+REC_MODULE = "import { discountAmount } from '../../src/cart.js';\nexport const cases = {};\n"
+
+
+def recording(**cases):
+    return "@@NOETHER-RECORD " + json.dumps({n: {"ok": True, "value": v} for n, v in cases.items()})
+
+
+def recorder(*proposals, asked=None):
+    queue = list(proposals)
+
+    def record(client, change, max_cases, taken, previous="", feedback=""):
+        if asked is not None:
+            asked.append((max_cases, sorted(taken), previous, feedback))
+        return queue.pop(0)
+    return record
+
+
+def proposal(*names):
+    from noether.record import Proposal
+
+    return Proposal(REC_MODULE, [{"name": n, **REC_META} for n in names])
+
+
+def test_the_record_round_pins_recorded_inputs_and_a_silent_flip_makes_it_broken(tmp_path):
+    # Round one flips only the announced shipping check. The recorded check is red on head: nothing announces it.
+    asked = []
+    runner = ScriptedRunner(plan={"head": [{SHIPPING.name: False, "half-cent": False}]})
+    runner.recordings = [recording(**{"half-cent": "3"})]
+    stages = make_stages(record_cases=recorder(proposal("half-cent"), asked=asked))
+
+    run, events, runner = run_scripted(runner, stages=stages, tmp=tmp_path)
+
+    assert run.verdict == "BROKEN"
+    assert asked[0][0] == 16 and asked[0][1] == sorted([DISCOUNT.name, LINE_TOTAL.name, SHIPPING.name])
+    assert {f.invariant.name: f.kind for f in run.flips} == {SHIPPING.name: "intended", "half-cent": "silent"}
+    assert runner.modules == [("base", ["_record.mjs", "_record_run.mjs"], "_record_run.mjs")]
+    assert 'const __expected = "3";' in next(i for i in run.invariants if i.name == "half-cent").test_code
+    record_base = [d for d in of(events, "base", "done") if d.get("record")]
+    assert record_base[0]["added"] == ["half-cent"] and record_base[0]["probe"] is True
+    assert runner.calls.count("run_tests") == 6  # round one: base x2, head; record: base x2, head
+
+
+def test_a_case_that_threw_on_base_is_asked_again_with_the_failure(tmp_path):
+    asked = []
+    runner = ScriptedRunner()
+    runner.recordings = [
+        "@@NOETHER-RECORD " + json.dumps({"a-case": {"ok": False, "error": "ReferenceError: level is not defined"}}),
+        recording(**{"a-case-fixed": "1"})]
+    stages = make_stages(record_cases=recorder(proposal("a-case"), proposal("a-case-fixed"), asked=asked))
+
+    run, _, _ = run_scripted(runner, stages=stages, tmp=tmp_path)
+
+    assert "ReferenceError: level is not defined" in asked[1][3] and asked[1][2] == REC_MODULE
+    assert "a-case-fixed" in [i.name for i in run.invariants]
+    assert {"name": "a-case", "reason": "record failed on base: ReferenceError: level is not defined"} in run.dropped
+
+
+def test_a_module_that_did_not_load_is_retried_once_and_then_the_round_ends(tmp_path):
+    runner = ScriptedRunner()
+    runner.recordings = ["SyntaxError: Unexpected token"]
+    stages = make_stages(record_cases=recorder(proposal("a-case"), proposal("b-case")))
+
+    run, _, runner = run_scripted(runner, stages=stages, tmp=tmp_path)
+
+    assert run.verdict == "CONSERVED" and len(run.invariants) == 3 and len(runner.modules) == 2
+
+
+def test_the_record_round_is_skipped_after_a_silent_flip_and_when_max_records_is_zero(tmp_path):
+    asked = []
+    stages = make_stages(record_cases=recorder(proposal("half-cent"), asked=asked))
+
+    run_scripted(ScriptedRunner(plan={"head": [{DISCOUNT.name: False}]}), stages=stages, tmp=tmp_path)
+    run_scripted(caps=Caps(max_records=0), stages=stages, tmp=tmp_path)
+
+    assert asked == []
+
+
+def test_a_failed_record_round_is_logged_and_the_first_round_stands(tmp_path):
+    def broken(client, change, max_cases, taken, previous="", feedback=""):
+        raise ModelError("pin: HTTP 500")
+
+    run, events, _ = run_scripted(stages=make_stages(record_cases=broken), tmp=tmp_path)
+
+    assert run.verdict == "CONSERVED" and len(run.invariants) == 3
+    assert {"probe": True, "record": True, "error": "the record round stopped: pin: HTTP 500"} in of(events, "pin", "progress")

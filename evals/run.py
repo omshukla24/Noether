@@ -47,13 +47,13 @@ def check_once(case: Case, run_no: int, runner_kind: str, bundles: Path, env_fil
         runner = make_runner(runner_kind)
         run = run_check(change, Client.from_env(env_file), runner, None, Caps(fix=False), out_dir=str(bundles))
         base_done = next((e.data for e in run.timeline if e.stage == "base" and e.type == "done"), {})
-        probe_done = next((e.data for e in run.timeline if e.stage == "base" and e.type == "done" and e.data.get("probe")), {})
+        added = [n for e in run.timeline if e.stage == "base" and e.type == "done" and e.data.get("probe") for n in e.data.get("added", [])]
         row.update(
             verdict=run.verdict, reason=run.reason, run_id=run.run_id,
             silent=[f.invariant.name for f in run.flips if f.kind == "silent"],
             intended=[f.invariant.name for f in run.flips if f.kind == "intended"],
             pinned=len(run.invariants), repaired=len(base_done.get("repaired", [])), dropped=len(run.dropped),
-            probed=probe_done.get("added", []),
+            probed=added,
             cost_usd=cost_estimate(run.models), sandbox_seconds=round(run.sandbox_seconds, 1),
             bundle=f"{run.run_id}/bundle.json",
         )
