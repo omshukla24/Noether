@@ -50,17 +50,6 @@ export function Seal() {
           </figure>
         </div>
       </div>
-
-      <div className={styles.marquee} data-marquee data-speed="55" aria-hidden="true">
-        <div className={styles.track} data-marquee-track>
-          <span className={styles.item}>
-            <b className={styles.ok}>CONSERVED</b>
-            <i className={styles.dot} />
-            <b className={styles.bad}>BROKEN</b>
-            <i className={styles.dot} />
-          </span>
-        </div>
-      </div>
     </section>
   );
 }
