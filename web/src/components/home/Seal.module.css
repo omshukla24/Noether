@@ -1,7 +1,8 @@
-/* 08 Seal: the open slot on an indigo wash, the workflow to copy, a velocity marquee. */
+/* 08 Seal: the open slot on an indigo wash and the workflow to copy. */
 .seal {
   background: var(--accent-weak);
   padding-top: var(--s-9);
+  padding-bottom: var(--s-9);
   overflow: hidden;
 }
 .inner { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 56px); }
@@ -74,15 +75,6 @@
 .code pre { margin: 0; padding: var(--s-4); overflow-x: auto; font-family: var(--font-mono); font-size: var(--fs-micro); line-height: 1.75; }
 .codeLine { display: block; white-space: pre; }
 .ln { display: inline-block; width: 3ch; margin-right: var(--s-3); color: var(--muted); user-select: none; }
-
-/* velocity marquee: speeds up and skews with scroll, flips direction when scrolling back */
-.marquee { margin-top: var(--s-9); padding: var(--s-5) 0; border-top: 1px solid var(--accent); overflow: hidden; background: var(--ground); }
-.track { display: flex; width: max-content; will-change: transform; }
-.item { display: inline-flex; align-items: center; gap: var(--s-6); padding-right: var(--s-6); font-family: var(--font-display); font-size: clamp(3.4rem, 2rem + 6vw, 8rem); line-height: 1; letter-spacing: -0.04em; white-space: nowrap; }
-.item b { font-weight: 500; }
-.ok { color: var(--accent); }
-.bad { color: var(--broken); }
-.dot { display: inline-block; width: 2px; height: 0.7em; background: var(--faint); }
 
 @media (max-width: 900px) {
   .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-7); }
