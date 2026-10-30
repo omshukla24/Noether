@@ -2,7 +2,7 @@ import json
 
 import httpx
 
-from noether.judge import JUDGE_SCHEMA, judge_flips
+from noether.judge import JUDGE_SCHEMA, build_judge_messages, judge_flips
 from noether.model import Flip, Intent, Invariant, Location
 
 INTENT = Intent("Tidies clamp.", ["clamp stops returning the bound itself"])
@@ -14,7 +14,8 @@ def flip(name, **kw):
 
 
 def verdicts(*entries):
-    return json.dumps({"verdicts": [{"name": n, "kind": k, "reason": r} for n, k, r in entries]})
+    return json.dumps({"verdicts": [{"name": n, "rule_gives": "x", "head_gives": "x", "kind": k, "reason": r}
+                                    for n, k, r in entries]})
 
 
 def test_no_flips_means_no_call(make_client, change):
@@ -87,3 +88,20 @@ def test_prompt_carries_intent_pr_diff_and_each_flip(make_client, change):
     for needle in ("Tidy clamp", "Small cleanup.", "clamp stops returning the bound itself", "hi - 1",
                    "a-test claim", "// test code of a-test", "AssertionError in a-test"):
         assert needle in user
+
+
+def test_the_judge_reads_a_stated_rule_as_covering_every_input_and_unchanged_as_silent(change):
+    system = build_judge_messages(INTENT, change, [flip("a-test")])[0]["content"]
+
+    assert "A stated rule announces every input it applies to, not only its examples" in system
+    assert "an input under an exception the text states, is silent" in system
+    assert "whatever the diff or its comments suggest" in system
+
+
+def test_the_judge_applies_the_rule_to_each_input_before_it_labels_the_flip(change):
+    keys = list(JUDGE_SCHEMA["properties"]["verdicts"]["items"]["properties"])
+    assert keys.index("rule_gives") < keys.index("kind") and keys.index("head_gives") < keys.index("kind")
+    system = build_judge_messages(INTENT, change, [flip("a-test")])[0]["content"]
+    assert "the reading that every example fits is the rule" in system
+    assert "Examples show a rule, they never narrow it" in system
+    assert "A flip is intended only when both are the same result" in system

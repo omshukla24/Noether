@@ -10,7 +10,8 @@ from noether.ingest import from_local
 from noether.nemotron import ModelError
 from noether.pipeline import Caps, run_check
 from noether.runner import LocalRunner
-from tests.tiny_cart import (DISCOUNT, FIXTURE, LINE_TOTAL, SHIPPING, FakeClient, ScriptedRunner, make_stages)
+from tests.tiny_cart import (DISCOUNT, FIXTURE, LINE_TOTAL, SHIPPING, FakeClient, ScriptedRunner, invariant,
+                             make_stages)
 
 STAGE_ORDER = ["ingest", "intent", "pin", "base", "head", "judge", "fix", "seal"]
 
@@ -465,3 +466,90 @@ def test_a_check_red_on_base_gets_one_repair_and_is_pinned_when_it_then_holds(tm
     assert of(events, "base", "done")[0]["repaired"] == [SHIPPING.name]
     assert SHIPPING.name in [i.name for i in run.invariants]
     assert next(i for i in run.invariants if i.name == SHIPPING.name).claim.endswith("(read again)")
+
+
+# --------------------------------------------------------------- the diff-guided probe round
+
+PROBE = invariant("discount_just_under_half_a_cent", "discountAmount", "15 percent of 9.99 rounds to 1.50",
+                  "assert.equal(discountAmount(9.99, 15), 1.5);")
+
+
+def probing(*found, asked=None):
+    def probe(client, change, pinned, max_items=6):
+        if asked is not None:
+            asked.append(([i.name for i in pinned], max_items))
+        return list(found), []
+    return probe
+
+
+def test_the_probe_round_is_skipped_once_round_one_has_a_silent_flip(tmp_path):
+    asked = []
+    runner = ScriptedRunner(plan={"head": [{DISCOUNT.name: False}]})
+
+    run, _, _ = run_scripted(runner, stages=make_stages(probe_invariants=probing(PROBE, asked=asked)), tmp=tmp_path)
+
+    assert asked == [] and run.verdict == "BROKEN"
+
+
+def test_the_probe_round_catches_what_round_one_missed_and_reuses_the_stages(tmp_path):
+    # Round one: only SHIPPING flips, and the judge calls it announced. The probe check flips silently.
+    asked = []
+    runner = ScriptedRunner(plan={"head": [{SHIPPING.name: False, PROBE.name: False}]})
+    stages = make_stages(probe_invariants=probing(PROBE, asked=asked))
+
+    run, events, _ = run_scripted(runner, caps=Caps(max_probes=4), stages=stages, tmp=tmp_path)
+
+    assert asked == [([LINE_TOTAL.name, DISCOUNT.name, SHIPPING.name], 4)]
+    assert run.verdict == "BROKEN"
+    assert {f.invariant.name: f.kind for f in run.flips} == {SHIPPING.name: "intended", PROBE.name: "silent"}
+    assert [i.name for i in run.invariants][-1] == PROBE.name and len(run.base_results[PROBE.name]) == 2
+    # the same stage names, marked probe, with no second start: the cockpit and stage spans need no change
+    assert all(len(of(events, s, "start")) == 1 for s in STAGE_ORDER[:6])
+    probe_base = [d for d in of(events, "base", "done") if d.get("probe")]
+    assert probe_base[0]["added"] == [PROBE.name] and probe_base[0]["pinned"][-1] == PROBE.name
+    assert [d["name"] for d in of(events, "pin", "progress") if d.get("probe")] == [PROBE.name]
+    assert of(events, "judge", "done")[-1] == {"probe": True, "silent": [PROBE.name], "intended": [SHIPPING.name]}
+
+
+def test_a_probe_check_that_fails_on_base_is_dropped_never_surfaced(tmp_path):
+    # A check that encodes HEAD behaviour is red on BASE: it must not reach head or the verdict.
+    runner = ScriptedRunner(plan={"base": [{}, {}, {PROBE.name: False}], "head": [{PROBE.name: False}]})
+
+    run, events, runner = run_scripted(runner, stages=make_stages(probe_invariants=probing(PROBE)), tmp=tmp_path)
+
+    assert run.verdict == "CONSERVED" and run.flips == []
+    assert PROBE.name not in [i.name for i in run.invariants]
+    assert {"name": PROBE.name, "reason": "red on base: boom"} in run.dropped
+    assert runner.calls.count("run_tests") == 5  # base x2, head, probe on base x2, never on head
+    assert not [d for d in of(events, "head", "done") if d.get("probe")]
+
+
+def test_probe_checks_are_capped_and_may_not_reuse_a_round_one_name(tmp_path):
+    other = invariant("discount_of_zero_percent", "discountAmount", "0 percent takes nothing off",
+                      "assert.equal(discountAmount(9.99, 0), 0);")
+    stages = make_stages(probe_invariants=probing(replace(LINE_TOTAL, claim="again"), PROBE, other))
+
+    run, _, _ = run_scripted(caps=Caps(max_probes=1), stages=stages, tmp=tmp_path)
+
+    assert [i.name for i in run.invariants] == [LINE_TOTAL.name, DISCOUNT.name, SHIPPING.name, PROBE.name]
+    assert run.dropped[-2:] == [{"name": LINE_TOTAL.name, "reason": "duplicate test name"},
+                                {"name": other.name, "reason": "over the cap of 1 tests"}]
+
+
+def test_a_failed_probe_round_is_logged_and_the_first_round_stands(tmp_path):
+    def broken(client, change, pinned, max_items=6):
+        raise ModelError("pin: HTTP 500")
+
+    run, events, _ = run_scripted(stages=make_stages(probe_invariants=broken), tmp=tmp_path)
+
+    assert run.verdict == "CONSERVED" and len(run.invariants) == 3
+    assert {"probe": True, "error": "the probe round stopped: pin: HTTP 500"} in of(events, "pin", "progress")
+    assert not of(events, "pin", "error")
+
+
+def test_max_probes_zero_turns_the_round_off(tmp_path):
+    asked = []
+
+    run_scripted(caps=Caps(max_probes=0), stages=make_stages(probe_invariants=probing(PROBE, asked=asked)), tmp=tmp_path)
+
+    assert asked == []

@@ -102,7 +102,8 @@ def test_read_intent_uses_nano_without_thinking(make_client, change):
     assert sent["model"] == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
     assert sent["chat_template_kwargs"] == {"enable_thinking": False}
     user = sent["messages"][-1]["content"]
-    assert "Tidy clamp" in user and "Small cleanup." in user and "hi - 1" in user  # title, body, diff
+    assert "Tidy clamp" in user and "Small cleanup." in user
+    assert "hi - 1" not in user  # no diff: only the text can announce a change
 
 
 def test_read_intent_attaches_bumps_and_tavily_notes(make_client, change):

@@ -255,10 +255,39 @@ def pin_invariants(client: Client, change: Change, max_items: int = 12) -> tuple
     """Ask Super for tests; return (kept, dropped). dropped items are {"name", "reason"}."""
     if not pinnable_paths(change):
         return [], []
-    data = client.chat_json("pin", build_pin_messages(change, max_items), INVARIANT_SCHEMA)
+    return _keep(client.chat_json("pin", build_pin_messages(change, max_items), INVARIANT_SCHEMA), change, max_items)
+
+
+PROBE_NOTE = """A first round of checks ran on BASE and on HEAD and caught nothing the title does not announce: each still passes on HEAD or changed only as the title says. If this pull request changes something silently, it is at inputs those checks never tried.
+Below is the unified diff of each changed file: lines starting with '-' are BASE, lines starting with '+' are HEAD. For every hunk, work out concrete inputs on which the BASE lines and the HEAD lines give different results: a guard that moved, vanished or changed side; a pattern, character class or branch that now covers more or fewer inputs; rounding, flooring or truncation that changed; a cap or clamp applied before instead of after another step; an order, tie-break or default that changed. When a character class, range, set or list changed, name each member it gained or lost and use inputs that put each one where the pattern looks (a class that lost 's' after a capital: 'APIUser', 'XMLSchema'). Write checks at exactly those inputs, and drive them through the public API the way callers do.
+Each check asserts what BASE returns at that input, worked out from the BASE source, never what HEAD returns: a check that fails on BASE is thrown away. Skip inputs where the title says the result changes on purpose. Do not repeat the checks already pinned; use other inputs and new names.
+Return only {"invariants": [...]}."""
+
+
+def build_probe_messages(change: Change, pinned: list[Invariant], max_items: int = 6) -> list[dict]:
+    """The pin prompt plus both sides of every hunk and the checks the first round already pinned."""
+    messages = build_pin_messages(change, max_items)
+    lines = [PROBE_NOTE, "", "Checks already pinned:", *([f"- {inv.name}: {inv.claim}" for inv in pinned] or ["- none"])]
+    for f in js_sources(change, "base"):
+        if patch := file_diff(change.diff, f.path):
+            lines += ["", f"### Diff of {f.path}", "```diff", clip(patch, MAX_DIFF_CHARS), "```"]
+    messages[1]["content"] += "\n\n" + "\n".join(lines)
+    return messages
+
+
+def probe_invariants(client: Client, change: Change, pinned: list[Invariant],
+                     max_items: int = 6) -> tuple[list[Invariant], list[dict]]:
+    """The diff-guided second round (a catching test): new checks aimed where BASE and HEAD may differ."""
+    if not pinnable_paths(change):
+        return [], []
+    data = client.chat_json("pin", build_probe_messages(change, pinned, max_items), INVARIANT_SCHEMA)
+    return _keep(data, change, max_items, {inv.name for inv in pinned})
+
+
+def _keep(data: dict, change: Change, max_items: int, seen: set[str] | None = None) -> tuple[list[Invariant], list[dict]]:
     kept: list[Invariant] = []
     dropped: list[dict] = []
-    seen: set[str] = set()
+    seen = set(seen or ())
     for item in data["invariants"]:
         if isinstance(item, dict):
             item = _tidy(item, change)

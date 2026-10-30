@@ -129,6 +129,17 @@ def test_markdown_carries_the_numbers_and_names_the_misses():
     assert json.loads(json.dumps(report))["summary"]["runs"] == 2
 
 
+def test_markdown_counts_the_hits_only_the_probe_round_found():
+    rows = [row("case0", "BROKEN", "BROKEN", silent=["p1"], probed=["p1", "p2"]),
+            row("case0", "BROKEN", "BROKEN", run=2, silent=["a", "p1"], probed=["p1"]),
+            row("case0", "BROKEN", "CONSERVED", run=3, pinned=9, repaired=0, dropped=1, probed=["p3"])]
+    text = render_markdown(build_report(fake_cases(1), rows, [], Namespace(runner="contree", runs=3, workers=1,
+                                                                           budget=1.5), "s", 1.0))
+
+    assert "| Hits that only the diff-guided probe round found | 1 of 2 |" in text
+    assert "pinned 9, repaired 0, dropped 1, 1 of them pinned by the probe round" in text
+
+
 def test_markdown_says_when_the_budget_stopped_the_run():
     report = build_report(fake_cases(1), [row("case0", "BROKEN", "BROKEN")], [{"case": "case0", "run": 2}],
                           Namespace(runner="local", runs=2, workers=1, budget=0.05), "s", 1.0)

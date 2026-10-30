@@ -47,11 +47,13 @@ def check_once(case: Case, run_no: int, runner_kind: str, bundles: Path, env_fil
         runner = make_runner(runner_kind)
         run = run_check(change, Client.from_env(env_file), runner, None, Caps(fix=False), out_dir=str(bundles))
         base_done = next((e.data for e in run.timeline if e.stage == "base" and e.type == "done"), {})
+        probe_done = next((e.data for e in run.timeline if e.stage == "base" and e.type == "done" and e.data.get("probe")), {})
         row.update(
             verdict=run.verdict, reason=run.reason, run_id=run.run_id,
             silent=[f.invariant.name for f in run.flips if f.kind == "silent"],
             intended=[f.invariant.name for f in run.flips if f.kind == "intended"],
             pinned=len(run.invariants), repaired=len(base_done.get("repaired", [])), dropped=len(run.dropped),
+            probed=probe_done.get("added", []),
             cost_usd=cost_estimate(run.models), sandbox_seconds=round(run.sandbox_seconds, 1),
             bundle=f"{run.run_id}/bundle.json",
         )
@@ -134,6 +136,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Estimated model cost | ${s['cost_usd']:.2f} (model tokens only; sandbox time is not priced) |",
         f"| Time | {duration(report['wall_seconds'])} wall clock, {duration(s['run_seconds'])} summed over runs |",
     ]
+    if any("probed" in r for r in report["rows"]):
+        caught = [r for r in report["rows"] if outcome(r["expected"], r["verdict"]) == "caught"]
+        by_probe = [r for r in caught if r.get("silent") and set(r["silent"]) <= set(r.get("probed", []))]
+        lines.append(f"| Hits that only the diff-guided probe round found | {len(by_probe)} of {len(caught)} |")
     if report["skipped"]:
         lines += ["", f"The ${report['budget_usd']:.2f} budget stopped the run early: "
                       f"{len(report['skipped'])} planned runs were not started."]
@@ -153,6 +159,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         for r in wrong:
             kind = outcome(r["expected"], r["verdict"]).replace("_", " ")
             detail = f"pinned {r.get('pinned', '?')}, repaired {r.get('repaired', '?')}, dropped {r.get('dropped', '?')}"
+            if "probed" in r:
+                detail += f", {len(r['probed'])} of them pinned by the probe round"
             lines.append(f"- {r['case']} run {r['run']}: {kind}, verdict {r['verdict']}. {r['reason']} ({detail})")
     return "\n".join(lines) + "\n"
 

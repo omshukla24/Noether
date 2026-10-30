@@ -4,8 +4,8 @@ import pytest
 
 from noether.model import Change, ChangedFile, Invariant
 from noether.prompt_util import file_diff
-from noether.pin import (FORBIDDEN, INVARIANT_SCHEMA, build_pin_messages, exports_of, pin_invariants,
-                         repair_invariants, validate_invariant)
+from noether.pin import (FORBIDDEN, INVARIANT_SCHEMA, build_pin_messages, build_probe_messages, exports_of,
+                         pin_invariants, probe_invariants, repair_invariants, validate_invariant)
 
 GOOD_CODE = """import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -214,3 +214,48 @@ def test_a_check_may_import_a_related_file(change):
             "target_symbol": "simulate", "test_code": code}
     assert validate_invariant(item, related) is None
     assert validate_invariant(item, change) is not None  # without the related file it is unknown
+
+
+PINNED = [Invariant("clamp-upper-bound", "clamp returns the upper bound for larger values", "src/physics.js", "clamp",
+                    GOOD_CODE)]
+
+
+def test_the_probe_prompt_shows_both_sides_of_each_hunk_and_what_is_already_pinned(change):
+    system, user = (m["content"] for m in build_probe_messages(change, PINNED, max_items=4))
+
+    assert system == build_pin_messages(change)[0]["content"]
+    assert user.startswith(build_pin_messages(change, 4)[1]["content"])  # BASE source and ranges as in round one
+    assert "-  if (x > hi) return hi;" in user and "+  if (x >= hi) return hi - 1;" in user
+    assert "### Diff of src/physics.js" in user and "Diff of README" not in user
+    assert "- clamp-upper-bound: clamp returns the upper bound for larger values" in user
+    assert "what BASE returns" in user and "never what HEAD returns" in user
+
+
+def test_the_probe_prompt_says_when_nothing_was_pinned(change):
+    assert "Checks already pinned:\n- none" in build_probe_messages(change, [])[1]["content"]
+
+
+def test_probe_keeps_new_checks_and_drops_names_round_one_used(make_client, change):
+    client = reply(make_client, item(), item(name="clamp-at-the-bound"), item(name="clamp-past-the-bound"))
+
+    kept, dropped = probe_invariants(client, change, PINNED, max_items=1)
+
+    assert [k.name for k in kept] == ["clamp-at-the-bound"]
+    assert dropped == [{"name": "clamp-upper-bound", "reason": "duplicate name"},
+                       {"name": "clamp-past-the-bound", "reason": "over the cap of 1 tests"}]
+    assert client.sent[0]["model"] == "nvidia/nemotron-3-super-120b-a12b"
+    assert "### Diff of src/physics.js" in client.sent[0]["messages"][1]["content"]
+
+
+def test_probe_with_nothing_to_pin_makes_no_model_call(make_client):
+    change = Change("a/b", "main", "pr", files=[ChangedFile("src/x.js", "added", [], None, "export const x=1")])
+    client = make_client()
+
+    assert probe_invariants(client, change, []) == ([], [])
+    assert client.sent == []
+
+
+def test_the_probe_prompt_asks_for_every_member_a_changed_class_gained_or_lost(change):
+    user = build_probe_messages(change, PINNED)[1]["content"]
+
+    assert "name each member it gained or lost" in user
