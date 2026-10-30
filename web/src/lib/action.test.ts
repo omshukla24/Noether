@@ -69,7 +69,7 @@ describe("workflowSecrets", () => {
 describe("python constants", () => {
   it("reads the run caps from pipeline.py", () => {
     const caps = parseCaps(read("py", "noether", "pipeline.py"));
-    expect(caps).toMatchObject({ max_invariants: expect.any(Number), max_run_tokens: expect.any(Number), fix: true });
+    expect(caps).toMatchObject({ max_invariants: expect.any(Number), max_probes: expect.any(Number), max_run_tokens: expect.any(Number), fix: true });
     expect(parseCaps("@dataclass\nclass Caps:\n    max_run_tokens: int = 250_000\n    fix: bool = False\n\nx = 1\n")).toEqual({
       max_run_tokens: 250000,
       fix: false,
