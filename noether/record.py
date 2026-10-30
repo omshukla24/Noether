@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass, field
 
 from noether.model import Change, Invariant
-from noether.nemotron import Client
+from noether.nemotron import Client, ModelError, extract_json
 from noether.pin import (FORBIDDEN, MAX_PROMPT_CHARS, NAME_RE, PINNED_DIR, _add_missing_imports, base_ranges,
                          build_pin_messages, fix_import_paths, pinnable_paths)
 from noether.prompt_util import clip, file_diff, js_sources
@@ -45,30 +45,28 @@ for (const [name, fn] of list) {{
 console.log({json.dumps(MARK)} + JSON.stringify(out));
 """
 
-RECORD_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "module": {"type": "string"},
-        "cases": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "claim": {"type": "string"},
-                    "target_file": {"type": "string"},
-                    "target_symbol": {"type": "string"},
-                },
-                "required": ["name", "claim", "target_file", "target_symbol"],
-            },
-        },
-    },
-    "required": ["module", "cases"],
-}
+CASE_KEYS = ("name", "claim", "target_file", "target_symbol")
+_FENCE = re.compile(r"```[ \t]*(?:js|javascript|mjs)?[ \t]*\n(.*?)```", re.S)
+
+
+def parse_reply(text: str) -> tuple[str, list]:
+    """(module, cases) from a reply made of a fenced code block and then a JSON list of case descriptions.
+    Code in a fence, not in a JSON string, because models garble long escaped strings."""
+    fence = _FENCE.search(text)
+    if fence is None:
+        raise ModelError("record: no ```js block with the module in the reply")
+    rest = text[fence.end():]
+    cases = extract_json(rest) if re.search(r"[\[{]", rest) else None
+    if isinstance(cases, dict):
+        cases = cases.get("cases")
+    if not isinstance(cases, list):
+        raise ModelError("record: no JSON list of cases after the module")
+    return fence.group(1), cases
+
 
 SYSTEM = """You choose test INPUTS for JavaScript code. You do not write expected values and you do not write assertions. Your cases are run on the BASE version of the code in a sandbox, whatever BASE returns is recorded, and the recording becomes a check: a later change that alters the result at one of your inputs is caught. So all that matters is that your inputs reach the behaviour a change could alter.
 
-Return {"module": "<JavaScript source>", "cases": [{"name", "claim", "target_file", "target_symbol"}, ...]}.
+Reply with exactly two parts and nothing else: first the module in one ```js code block; then, after it, one JSON list in a ```json block with an entry {"name", "claim", "target_file", "target_symbol"} per case.
 
 The module is one ES module:
 - It may start with import statements from the files shown (changed or related), by a relative path from .noether/pinned/_record.mjs, so a file src/x.js is imported as '../../src/x.js'. Use exported symbols only; the exports are listed for each file. Do not import node:test or node:assert.
@@ -158,20 +156,29 @@ def propose_cases(client: Client, change: Change, max_cases: int = 16, taken: se
     """Ask Super for a module of cases. A module that cannot be run comes back with no cases and the reason."""
     if not pinnable_paths(change):
         return Proposal("", [])
-    data = client.chat_json("pin", build_record_messages(change, max_cases, previous, feedback), RECORD_SCHEMA)
-    module = data["module"] if isinstance(data["module"], str) else ""
-    if "\n" not in module and "\\n" in module:  # newlines sent as the two characters backslash and n
-        module = module.replace("\\n", "\n").replace("\\t", "\t").replace('\\"', '"')
+    messages = build_record_messages(change, max_cases, previous, feedback)
+    for attempt in range(2):
+        reply = client.chat("pin", messages)
+        try:
+            module, listed = parse_reply(reply.text)
+            break
+        except ModelError as exc:
+            if attempt:
+                raise
+            messages = messages + [{"role": "assistant", "content": reply.text},
+                                   {"role": "user", "content": f"That reply was rejected: {exc}. Send both parts again."}]
+    if "\n" not in module.rstrip("\n") and "\\n" in module:  # newlines sent as the two characters backslash and n
+        module = module.rstrip("\n").replace("\\n", "\n").replace("\\t", "\t").replace('\\"', '"')
     module = fix_import_paths(_NODE_IMPORT.sub("", module), change)
 
-    for target in {posixpath.normpath(str(c.get("target_file", "")).replace("\\", "/")) for c in data["cases"] if isinstance(c, dict)}:
+    for target in {posixpath.normpath(str(c.get("target_file", "")).replace("\\", "/")) for c in listed if isinstance(c, dict)}:
         module = _add_missing_imports(module, change, target)
     if problem := module_problem(module, change):
         return Proposal("", [], [{"name": "(module)", "reason": f"record rejected: {problem}"}])
     cases: list[dict] = []
     dropped: list[dict] = []
     seen = set(taken)
-    for item in data["cases"]:
+    for item in listed:
         name = item.get("name", "?") if isinstance(item, dict) else "?"
         if len(cases) >= max_cases:
             dropped.append({"name": name, "reason": f"over the cap of {max_cases} cases"})

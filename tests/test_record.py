@@ -25,7 +25,8 @@ def case(name="clamp-above-the-bound", **over):
 
 
 def reply(make_client, module=MODULE, cases=None):
-    return make_client(make_client.ok(json.dumps({"module": module, "cases": cases or [case()]})))
+    text = "```js\n" + module.rstrip("\n") + "\n```\n```json\n" + json.dumps(cases or [case()]) + "\n```"
+    return make_client(make_client.ok(text))
 
 
 def test_the_prompt_asks_for_inputs_only_and_shows_both_sides_of_the_diff(change):
