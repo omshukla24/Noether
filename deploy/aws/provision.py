@@ -23,7 +23,7 @@ from pathlib import Path
 REGION = "us-east-1"
 NAME = "noether"
 PARAM = "/noether/env"
-INSTANCE_TYPE = "t3.medium"
+INSTANCE_TYPE = "t3.small"  # the largest cheap type a free-plan account may start; the site is mostly static
 WINDOWS_AWS = r"C:\Program Files\Amazon\AWSCLIV2\aws.exe"
 AWS = shutil.which("aws") or WINDOWS_AWS
 ROOT = Path(__file__).resolve().parents[2]

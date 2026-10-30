@@ -12,7 +12,7 @@ REGION=$(TOKEN=$(curl -sX PUT http://169.254.169.254/latest/api/token -H 'X-aws-
   curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
 
 if [ ! -f /swapfile ]; then
-  dd if=/dev/zero of=/swapfile bs=1M count=2048
+  dd if=/dev/zero of=/swapfile bs=1M count=4096
   chmod 600 /swapfile && mkswap /swapfile
   swapon /swapfile
   echo '/swapfile none swap sw 0 0' >> /etc/fstab
@@ -50,8 +50,8 @@ mv /etc/noether.env.new /etc/noether.env
 grep '^NOETHER_HOST=' /etc/noether.env > /etc/noether-host.env
 SITE_URL=$(sed -n 's/^NEXT_PUBLIC_SITE_URL=//p' /etc/noether.env)
 
-# The build only sees the public site URL, never the API keys.
-sudo -u noether env HOME=/home/noether NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SITE_URL="$SITE_URL" \
+# The build only sees the public site URL, never the API keys. It needs more heap than 2 GB of RAM allows by default.
+sudo -u noether env HOME=/home/noether NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SITE_URL="$SITE_URL" NODE_OPTIONS=--max-old-space-size=3072 \
   PATH=/usr/local/bin:/usr/bin:/bin bash -c "cd $APP/web && npm ci --no-audit --no-fund && npm run build"
 sudo -u noether env HOME=/home/noether UV_PYTHON_INSTALL_DIR=/home/noether/python PATH=/usr/local/bin:/usr/bin:/bin \
   bash -c "cd $APP && uv venv --allow-existing --python 3.14 .venv && uv pip install --python .venv/bin/python -r web/requirements.txt"
