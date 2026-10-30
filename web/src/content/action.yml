@@ -1,0 +1,88 @@
+name: Noether
+description: Proves a pull request did not silently change behaviour it does not announce, and comments the verdict with its proof bundle.
+branding:
+  icon: check-circle
+  color: purple
+
+inputs:
+  nebius-api-key:
+    description: Nebius Token Factory API key (store it as a repository secret).
+    required: true
+  nebius-project-id:
+    description: Nebius project id that has Sandboxes access.
+    required: true
+  tavily-api-key:
+    description: Optional. Used only when the PR bumps a dependency, to read its changelog.
+    required: false
+    default: ""
+  fail-on-broken:
+    description: Fail the job when the verdict is BROKEN.
+    required: false
+    default: "true"
+  fix:
+    description: Try to locate and re-prove a fix for each silent break.
+    required: false
+    default: "true"
+
+outputs:
+  verdict:
+    description: CONSERVED, BROKEN or INCONCLUSIVE.
+    value: ${{ steps.check.outputs.verdict }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install Noether
+      shell: bash
+      run: pip install --quiet "${{ github.action_path }}"
+
+    - name: Check the pull request
+      id: check
+      shell: bash
+      env:
+        NEBIUS_API_KEY: ${{ inputs.nebius-api-key }}
+        NEBIUS_PROJECT_ID: ${{ inputs.nebius-project-id }}
+        TAVILY_API_KEY: ${{ inputs.tavily-api-key }}
+        GITHUB_TOKEN: ${{ github.token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+      run: |
+        flags=""
+        if [ "${{ inputs.fix }}" != "true" ]; then flags="--no-fix"; fi
+        set +e
+        python -m noether check --pr "$PR_URL" --runner contree --out runs $flags
+        code=$?
+        set -e
+        bundle=$(ls -t runs/*/bundle.json | head -n 1)
+        verdict=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['verdict'])" "$bundle")
+        echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+        echo "bundle=$bundle" >> "$GITHUB_OUTPUT"
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Keep the proof bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: noether-proof-bundle
+        path: ${{ steps.check.outputs.bundle }}
+
+    - name: Comment the verdict
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        python -c "import json,sys; from noether.comment import render_markdown; print(render_markdown(json.load(open(sys.argv[1])), sys.argv[2]), end='')" \
+          "${{ steps.check.outputs.bundle }}" "$RUN_URL" > noether-comment.md
+        gh pr comment "$PR_URL" --edit-last --body-file noether-comment.md 2>/dev/null \
+          || gh pr comment "$PR_URL" --body-file noether-comment.md
+
+    - name: Gate on the verdict
+      if: inputs.fail-on-broken == 'true' && steps.check.outputs.verdict == 'BROKEN'
+      shell: bash
+      run: |
+        echo "Noether found a silent break. See the comment and the proof bundle artifact."
+        exit 1
