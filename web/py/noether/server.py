@@ -5,7 +5,7 @@
     GET  /api/health
 
 Stream events: `stage` (one pipeline event), `result` (the sealed bundle, last), `fail` (the run could not finish).
-Deployed as a Vercel Python function (web/api/index.py); `uvicorn noether.server:app` runs it locally.
+Deployed on AWS (deploy/aws); `uvicorn noether.server:app` runs it locally. web/api/index.py serves it on Vercel.
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from noether.store import Store, StoreError, make_store
 log = logging.getLogger("noether.server")
 
 RUN_ID = re.compile(r"[0-9]{8}-[0-9]{6}-[0-9a-f]{6}")
-HARD_LIMIT_S = 270.0  # Vercel Hobby allows 300 s per function call; leave room to answer
+HARD_LIMIT_S = 270.0  # a stuck run must not hold one of the two run slots for long
 BUDGET_S = 255.0  # the pipeline aborts itself at its next stage event after this
 KEEPALIVE_S = 15.0
 MAX_CONCURRENT = 2

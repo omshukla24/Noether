@@ -1,0 +1,19 @@
+[Unit]
+Description=Noether HTTPS front (Caddy)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=caddy
+EnvironmentFile=/etc/noether-host.env
+Environment=XDG_DATA_HOME=/var/lib/caddy
+Environment=XDG_CONFIG_HOME=/var/lib/caddy
+ExecStart=/usr/local/bin/caddy run --config /opt/noether/deploy/aws/Caddyfile --adapter caddyfile
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

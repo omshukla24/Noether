@@ -1,0 +1,19 @@
+[Unit]
+Description=Noether site (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=noether
+WorkingDirectory=/opt/noether/web
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/local/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
