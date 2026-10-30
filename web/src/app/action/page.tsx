@@ -240,7 +240,11 @@ export default function ActionPage() {
 
       <Block n={7} title="What one run may spend">
         <ul>
-          <li>At most {cap("max_invariants")} pinned checks; any more are dropped as they are pinned.</li>
+          <li>At most {cap("max_invariants")} pinned checks in the first round; any more are dropped as they are pinned.</li>
+          <li>
+            When that round finds no silent break, a second round aimed at the changed lines pins at most{" "}
+            {cap("max_probes")} more.
+          </li>
           <li>{cap("max_run_tokens")} model tokens.</li>
           <li>{cap("max_sandbox_seconds")} seconds of sandbox time.</li>
           <li>A fix for each of the first {cap("max_fixes")} silent breaks.</li>
