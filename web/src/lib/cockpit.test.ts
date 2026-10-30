@@ -121,6 +121,7 @@ describe("failures", () => {
   });
 
   it("explains rate limits with a wait", () => {
+    expect(describeError("busy", "Two runs are already in progress. Try again in a minute.", 60).message).toBe("Two runs are already in progress. Try again in about 1 min.");
     expect(describeError("rate_limited", "Only 3 live runs per hour.", 1500).message).toBe("Only 3 live runs per hour. Try again in about 25 min.");
     expect(describeError("api_unreachable", "").message).toMatch(/could not be reached/);
   });
