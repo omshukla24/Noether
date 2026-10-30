@@ -277,6 +277,9 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
     world.sun.target.position.copy(camTarget);
   }
 
+  // Shader programs compile off the main thread (parallel compile); the first frame waits for them, so no long task.
+  let compiled = false;
+  let disposed = false;
   let hudTick = 0;
   function draw(dt: number, snap = false) {
     const alpha = reduced ? 0 : clamp(acc / DT, 0, 1);
@@ -296,7 +299,7 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
     const head = drawGhost("head", alpha);
     world.measure.visible = dive > 0.02;
     aimCamera(dt, snap);
-    renderer.render(world.scene, camera);
+    if (compiled) renderer.render(world.scene, camera);
 
     const gb = world.ghosts.base.group.position;
     const gh = world.ghosts.head.group.position;
@@ -380,6 +383,14 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
   }
   resize();
   draw(0, true);
+  renderer
+    .compileAsync(world.scene, camera)
+    .catch(() => {})
+    .then(() => {
+      if (disposed) return;
+      compiled = true;
+      draw(0, true);
+    });
 
   return {
     setBuild(next) {
@@ -416,6 +427,7 @@ export function createHopperScene(canvas: HTMLCanvasElement, opts: HopperOptions
       else gsap.ticker.remove(tick);
     },
     dispose() {
+      disposed = true;
       gsap.ticker.remove(tick);
       ro.disconnect();
       lines.forEach((l) => {

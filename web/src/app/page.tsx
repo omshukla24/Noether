@@ -26,7 +26,7 @@ export default function Home() {
   const { plates, seconds } = darkroomPlates(RUN);
   const found = RUN.breaks[0];
   const cases = [
-    judgeCase(RUN_INTENDED, "intended", "20261027-025352-edb700.json"),
+    judgeCase(RUN_INTENDED, "intended", "20261030-081836-42eca5.json"),
     judgeCase(RUN, "silent", "hopper.json"),
   ].filter((c) => c !== null);
 

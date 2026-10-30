@@ -7,7 +7,7 @@ describe("sealed runs shipped with the site", () => {
   it("lists hopper first and loads only names that exist", () => {
     const ids = listRunIds();
     expect(ids[0]).toBe("hopper");
-    expect(ids).toContain("20261027-025352-edb700");
+    expect(ids).toContain("20261030-081836-42eca5");
     expect(loadRun("../package")).toBeNull();
     expect(loadRun("hopper.json")).toBeNull();
   });

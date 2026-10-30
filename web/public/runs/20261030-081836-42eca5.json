@@ -1,0 +1,997 @@
+{
+  "noether": "0.1.0",
+  "run_id": "20261030-081836-42eca5",
+  "repo": "local/hopper",
+  "pr": {
+    "url": "",
+    "title": "Refactor physics step into integrate(); tune jump feel"
+  },
+  "base": {
+    "ref": "base",
+    "sha": "489ee1ef7e4d"
+  },
+  "head": {
+    "ref": "head",
+    "sha": "8373cf89d84b"
+  },
+  "verdict": "BROKEN",
+  "reason": "The pinned behaviour horizontal-movement-air-control-reduces-acceleration held on base, fails on head, and the pull request does not announce it.",
+  "intent": {
+    "summary": "Refactors the physics step into an integrate() function and adjusts jump-related parameters for better feel.",
+    "intended_changes": [
+      "The physics step is now handled by a new integrate() function that encapsulates velocity and collision logic.",
+      "Coyote time is increased from 4 to 6 frames to prevent missed jumps near platform edges.",
+      "Terminal fall speed is raised from 18 to 22 to make landings feel snappier and reduce floatiness on long drops."
+    ],
+    "dependency_bumps": []
+  },
+  "invariants": [
+    {
+      "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+      "claim": "When a jump occurs while grounded, the resulting state has airFrames set to COYOTE_FRAMES + 1.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { COYOTE_FRAMES } from '../../src/physics.js';\nimport { createState, step } from '../../src/physics.js';\n\nconst level = {\n  spawn: [0, 0, 0],\n  killY: -12,\n  platforms: [{ id: 'ground', min: [-10, -1, -10], max: [10, 0, 10] }],\n  coins: [],\n  goal: { id: 'goal', min: [0, 0, 0], max: [0, 0, 0] }\n};\n\nconst state = createState(level);\nconst input = { x: 0, z: 0, jump: true };\nconst result = step(state, input, level, 0);\n\nassert.strictEqual(result.airFrames, 5); // COYOTE_FRAMES (4) + 1\n",
+      "base": "pass",
+      "head": "fail",
+      "kind": "intended",
+      "output": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\nnode printed:\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n7 !== 5\n\n    at file:///w/repo/.noether/pinned/grounded-jumps-set-airframes-to-coyote-frames-plus-one.test.mjs:18:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)\n    at async node:internal/modules/esm/loader:647:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 7,\n  expected: 5,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.22.1"
+    },
+    {
+      "name": "not-grounded-no-jump-increments-airframes",
+      "claim": "When not grounded and not jumping, airFrames increments by 1 each frame.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { createState, step } from '../../src/physics.js';\n\nconst level = {\n  spawn: [0, 10, 0],\n  killY: -12,\n  platforms: [],\n  coins: [],\n  goal: { id: 'goal', min: [0, 0, 0], max: [0, 0, 0] }\n};\n\nlet state = createState(level);\nstate.airFrames = 3;\nstate.grounded = false;\nconst input = { x: 0, z: 0, jump: false };\n\nstate = step(state, input, level, 0);\nassert.strictEqual(state.airFrames, 4);\nstate = step(state, input, level, 1);\nassert.strictEqual(state.airFrames, 5);\n",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    },
+    {
+      "name": "horizontal-movement-air-control-reduces-acceleration",
+      "claim": "When in the air, horizontal acceleration is reduced to RUN_ACCEL * AIR_CONTROL.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { AIR_CONTROL, DT, RUN_ACCEL } from '../../src/physics.js';\nimport { createState, step } from '../../src/physics.js';\n\nconst level = {\n  spawn: [0, 10, 0],\n  killY: -12,\n  platforms: [],\n  coins: [],\n  goal: { id: 'goal', min: [0, 0, 0], max: [0, 0, 0] }\n};\n\nlet state = createState(level);\nstate.vel = [0, 0, 0];\nstate.grounded = false;\n\nconst accelGround = 60 * (1/60); // RUN_ACCEL * DT\nconst accelAir = accelGround * 0.1; // * AIR_CONTROL\n\nstate = step(state, { x: 1, z: 0, jump: false }, level, 0);\nassert.strictEqual(state.vel[0], accelAir);\n\nstate = step(state, { x: 1, z: 0, jump: false }, level, 1);\nassert.strictEqual(state.vel[0], accelAir * 2); // no friction in air\n",
+      "base": "pass",
+      "head": "fail",
+      "kind": "silent",
+      "output": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\nnode printed:\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0.0985 !== 0.1\n\n    at file:///w/repo/.noether/pinned/horizontal-movement-air-control-reduces-acceleration.test.mjs:22:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)\n    at async node:internal/modules/esm/loader:647:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0.0985,\n  expected: 0.1,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.22.1"
+    },
+    {
+      "name": "vertical-velocity-respects-terminal-speed",
+      "claim": "Vertical velocity is clamped to -TERMINAL_SPEED when falling.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { TERMINAL_SPEED } from '../../src/physics.js';\nimport { createState, step } from '../../src/physics.js';\n\nconst level = {\n  spawn: [0, 100, 0],\n  killY: -12,\n  platforms: [],\n  coins: [],\n  goal: { id: 'goal', min: [0, 0, 0], max: [0, 0, 0] }\n};\n\nlet state = createState(level);\nstate.vel = [0, -50, 0]; // already fast falling\n\n// Apply gravity several times to ensure clamping\nfor (let i = 0; i < 10; i++) {\n  state = step(state, { x: 0, z: 0, jump: false }, level, i);\n}\n\nassert.strictEqual(state.vel[1], -18); // -TERMINAL_SPEED\n",
+      "base": "pass",
+      "head": "fail",
+      "kind": "intended",
+      "output": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\nnode printed:\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n-22 !== -18\n\n    at file:///w/repo/.noether/pinned/vertical-velocity-respects-terminal-speed.test.mjs:22:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)\n    at async node:internal/modules/esm/loader:647:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: -22,\n  expected: -18,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.22.1"
+    },
+    {
+      "name": "jump-overrides-vertical-velocity",
+      "claim": "When a jump occurs, the vertical velocity is set exactly to JUMP_SPEED, ignoring current velocity or gravity.",
+      "target_file": "src/physics.js",
+      "target_symbol": "step",
+      "test_code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { JUMP_SPEED } from '../../src/physics.js';\nimport { createState, step } from '../../src/physics.js';\n\nconst level = {\n  spawn: [0, 0, 0],\n  killY: -12,\n  platforms: [{ id: 'ground', min: [-10, -1, -10], max: [10, 0, 10] }],\n  coins: [],\n  goal: { id: 'goal', min: [0, 0, 0], max: [0, 0, 0] }\n};\n\n// Case 1: jumping from rest\nlet state = createState(level);\nstate = step(state, { x: 0, z: 0, jump: true }, level, 0);\nassert.strictEqual(state.vel[1], 14);\n\n// Case 2: jumping while falling fast\nstate = createState(level);\nstate.vel = [0, -100, 0];\nstate = step(state, { x: 0, z: 0, jump: true }, level, 0);\nassert.strictEqual(state.vel[1], 14); // overridden, not -100 + 14\n\n// Case 3: jumping while moving upward\nstate = createState(level);\nstate.vel = [0, 20, 0];\nstate = step(state, { x: 0, z: 0, jump: true }, level, 0);\nassert.strictEqual(state.vel[1], 14); // set to JUMP_SPEED, not added\n",
+      "base": "pass",
+      "head": "pass",
+      "kind": "held",
+      "output": ""
+    }
+  ],
+  "dropped": [
+    {
+      "name": "landing-resets-airframes-to-zero",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "coyote-time-allows-jump-after-ledge",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "jump-buffer-queues-jump-press",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "horizontal-movement-ground-friction-applies-when-held",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "horizontal-movement-stop-friction-when-not-held",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    },
+    {
+      "name": "horizontal-speed-is-clamped-to-max-run-speed",
+      "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+    }
+  ],
+  "breaks": [
+    {
+      "invariant": "horizontal-movement-air-control-reduces-acceleration",
+      "file": "src/physics.js",
+      "line": null,
+      "code": "",
+      "why": "The refactor changed the friction function to apply RUN_FRICTION in air when input is held, a behavior change not announced and contradicted by 'No other behaviour changes.'",
+      "fix": null
+    }
+  ],
+  "own_suite": {
+    "base": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    "head": {
+      "ran": true,
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0
+    }
+  },
+  "sandbox": {
+    "snapshots": [
+      {
+        "label": "base",
+        "image": "e57ab086-2276-4dac-88b2-ed5a4be8c279"
+      },
+      {
+        "label": "head",
+        "image": "71fa021b-e560-47a6-b952-f2bfe3d169c0"
+      }
+    ],
+    "seconds": 29.4175
+  },
+  "models": [
+    {
+      "role": "intent",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "tokens_in": 343,
+      "tokens_out": 112,
+      "ms": 1587.6
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 5889,
+      "tokens_out": 4448,
+      "ms": 24884.8
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 8733,
+      "tokens_out": 2120,
+      "ms": 7907.8
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 7216,
+      "tokens_out": 1532,
+      "ms": 6997.7
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 8806,
+      "tokens_out": 2120,
+      "ms": 7421.5
+    },
+    {
+      "role": "pin",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "tokens_in": 8286,
+      "tokens_out": 1014,
+      "ms": 4356.6
+    },
+    {
+      "role": "judge",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "tokens_in": 3423,
+      "tokens_out": 2517,
+      "ms": 7190.1
+    }
+  ],
+  "cost_est_usd": 0.0328,
+  "timeline": [
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 0,
+      "stage": "ingest",
+      "type": "done",
+      "data": {
+        "repo": "local/hopper",
+        "base_sha": "489ee1ef7e4d",
+        "head_sha": "8373cf89d84b",
+        "title": "Refactor physics step into integrate(); tune jump feel",
+        "files": [
+          "src/physics.js"
+        ]
+      }
+    },
+    {
+      "t_ms": 0,
+      "stage": "intent",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 1588,
+      "stage": "intent",
+      "type": "done",
+      "data": {
+        "summary": "Refactors the physics step into an integrate() function and adjusts jump-related parameters for better feel.",
+        "intended_changes": [
+          "The physics step is now handled by a new integrate() function that encapsulates velocity and collision logic.",
+          "Coyote time is increased from 4 to 6 frames to prevent missed jumps near platform edges.",
+          "Terminal fall speed is raised from 18 to 22 to make landings feel snappier and reduce floatiness on long drops."
+        ],
+        "dependency_bumps": []
+      }
+    },
+    {
+      "t_ms": 1588,
+      "stage": "pin",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+        "claim": "When a jump occurs while grounded, the resulting state has airFrames set to COYOTE_FRAMES + 1.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "not-grounded-no-jump-increments-airframes",
+        "claim": "When not grounded and not jumping, airFrames increments by 1 each frame.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "landing-resets-airframes-to-zero",
+        "claim": "When landing (moving downward and hitting a platform), airFrames is reset to 0.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-after-ledge",
+        "claim": "After walking off a ledge, a jump can still be executed for COYOTE_FRAMES frames due to coyote time.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-queues-jump-press",
+        "claim": "A jump press is buffered for JUMP_BUFFER_FRAMES frames, allowing a jump to execute shortly after the press even if not grounded at the exact frame.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-ground-friction-applies-when-held",
+        "claim": "When grounded and a horizontal direction is held, velocity is multiplied by RUN_FRICTION each frame.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-stop-friction-when-not-held",
+        "claim": "When grounded and no horizontal direction is held, velocity is multiplied by STOP_FRICTION each frame.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-air-control-reduces-acceleration",
+        "claim": "When in the air, horizontal acceleration is reduced to RUN_ACCEL * AIR_CONTROL.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "vertical-velocity-respects-terminal-speed",
+        "claim": "Vertical velocity is clamped to -TERMINAL_SPEED when falling.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-is-clamped-to-max-run-speed",
+        "claim": "Horizontal speed is clamped to MAX_RUN_SPEED when acceleration would exceed it.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "progress",
+      "data": {
+        "name": "jump-overrides-vertical-velocity",
+        "claim": "When a jump occurs, the vertical velocity is set exactly to JUMP_SPEED, ignoring current velocity or gravity.",
+        "target_file": "src/physics.js",
+        "target_symbol": "step"
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "pin",
+      "type": "done",
+      "data": {
+        "kept": 11,
+        "dropped": [
+          {
+            "name": "landing-resets-airframes-to-zero",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "coyote-time-allows-jump-after-ledge",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "jump-buffer-queues-jump-press",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "horizontal-movement-ground-friction-applies-when-held",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "horizontal-movement-stop-friction-when-not-held",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          },
+          {
+            "name": "horizontal-speed-is-clamped-to-max-run-speed",
+            "reason": "red on base: the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+          }
+        ]
+      }
+    },
+    {
+      "t_ms": 26486,
+      "stage": "base",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "not-grounded-no-jump-increments-airframes",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "landing-resets-airframes-to-zero",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-after-ledge",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-queues-jump-press",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-ground-friction-applies-when-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-stop-friction-when-not-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-air-control-reduces-acceleration",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "vertical-velocity-respects-terminal-speed",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-is-clamped-to-max-run-speed",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 33253,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-overrides-vertical-velocity",
+        "run": 1,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 41166,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "repair": 1,
+        "asked": [
+          "landing-resets-airframes-to-zero",
+          "coyote-time-allows-jump-after-ledge",
+          "jump-buffer-queues-jump-press",
+          "horizontal-movement-ground-friction-applies-when-held"
+        ],
+        "returned": [
+          "landing-resets-airframes-to-zero",
+          "coyote-time-allows-jump-after-ledge",
+          "jump-buffer-queues-jump-press",
+          "horizontal-movement-ground-friction-applies-when-held"
+        ],
+        "rejected": [],
+        "missing": [],
+        "why": {
+          "landing-resets-airframes-to-zero": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "coyote-time-allows-jump-after-ledge": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "jump-buffer-queues-jump-press": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "horizontal-movement-ground-friction-applies-when-held": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:"
+        }
+      }
+    },
+    {
+      "t_ms": 48170,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "repair": 1,
+        "asked": [
+          "horizontal-movement-stop-friction-when-not-held",
+          "horizontal-speed-is-clamped-to-max-run-speed"
+        ],
+        "returned": [
+          "horizontal-movement-stop-friction-when-not-held"
+        ],
+        "rejected": [],
+        "missing": [
+          "horizontal-speed-is-clamped-to-max-run-speed"
+        ],
+        "why": {
+          "horizontal-movement-stop-friction-when-not-held": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "horizontal-speed-is-clamped-to-max-run-speed": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:"
+        }
+      }
+    },
+    {
+      "t_ms": 52962,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "landing-resets-airframes-to-zero",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 52962,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-after-ledge",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 52962,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-queues-jump-press",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 52962,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-ground-friction-applies-when-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 52962,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-stop-friction-when-not-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 60389,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "repair": 2,
+        "asked": [
+          "landing-resets-airframes-to-zero",
+          "coyote-time-allows-jump-after-ledge",
+          "jump-buffer-queues-jump-press",
+          "horizontal-movement-ground-friction-applies-when-held"
+        ],
+        "returned": [
+          "landing-resets-airframes-to-zero",
+          "coyote-time-allows-jump-after-ledge",
+          "jump-buffer-queues-jump-press",
+          "horizontal-movement-ground-friction-applies-when-held"
+        ],
+        "rejected": [],
+        "missing": [],
+        "why": {
+          "landing-resets-airframes-to-zero": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "coyote-time-allows-jump-after-ledge": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "jump-buffer-queues-jump-press": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "horizontal-movement-ground-friction-applies-when-held": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:"
+        }
+      }
+    },
+    {
+      "t_ms": 64749,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "repair": 2,
+        "asked": [
+          "horizontal-movement-stop-friction-when-not-held",
+          "horizontal-speed-is-clamped-to-max-run-speed"
+        ],
+        "returned": [
+          "horizontal-movement-stop-friction-when-not-held",
+          "horizontal-speed-is-clamped-to-max-run-speed"
+        ],
+        "rejected": [],
+        "missing": [],
+        "why": {
+          "horizontal-movement-stop-friction-when-not-held": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:",
+          "horizontal-speed-is-clamped-to-max-run-speed": "the test file stopped before its checks ran: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: node printed: node:internal/modules/run_main:"
+        }
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "landing-resets-airframes-to-zero",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-after-ledge",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-queues-jump-press",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-ground-friction-applies-when-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-stop-friction-when-not-held",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 67431,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-is-clamped-to-max-run-speed",
+        "run": 1,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "not-grounded-no-jump-increments-airframes",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "landing-resets-airframes-to-zero",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "coyote-time-allows-jump-after-ledge",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-buffer-queues-jump-press",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-ground-friction-applies-when-held",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-stop-friction-when-not-held",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-air-control-reduces-acceleration",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "vertical-velocity-respects-terminal-speed",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-speed-is-clamped-to-max-run-speed",
+        "run": 2,
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 71371,
+      "stage": "base",
+      "type": "progress",
+      "data": {
+        "name": "jump-overrides-vertical-velocity",
+        "run": 2,
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 74690,
+      "stage": "base",
+      "type": "done",
+      "data": {
+        "pinned": [
+          "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+          "not-grounded-no-jump-increments-airframes",
+          "horizontal-movement-air-control-reduces-acceleration",
+          "vertical-velocity-respects-terminal-speed",
+          "jump-overrides-vertical-velocity"
+        ],
+        "flaky": [],
+        "repaired": [
+          "coyote-time-allows-jump-after-ledge",
+          "horizontal-movement-ground-friction-applies-when-held",
+          "horizontal-movement-stop-friction-when-not-held",
+          "horizontal-speed-is-clamped-to-max-run-speed",
+          "jump-buffer-queues-jump-press",
+          "landing-resets-airframes-to-zero"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "checkpoint": "e57ab086-2276-4dac-88b2-ed5a4be8c279"
+      }
+    },
+    {
+      "t_ms": 74690,
+      "stage": "head",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 81310,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 81310,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "not-grounded-no-jump-increments-airframes",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 81310,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-air-control-reduces-acceleration",
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 81310,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "vertical-velocity-respects-terminal-speed",
+        "passed": false
+      }
+    },
+    {
+      "t_ms": 81310,
+      "stage": "head",
+      "type": "progress",
+      "data": {
+        "name": "jump-overrides-vertical-velocity",
+        "passed": true
+      }
+    },
+    {
+      "t_ms": 83329,
+      "stage": "head",
+      "type": "done",
+      "data": {
+        "flips": [
+          "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+          "horizontal-movement-air-control-reduces-acceleration",
+          "vertical-velocity-respects-terminal-speed"
+        ],
+        "own_suite": {
+          "ran": true,
+          "exit_code": 0,
+          "passed": 14,
+          "failed": 0
+        },
+        "branch": "71fa021b-e560-47a6-b952-f2bfe3d169c0"
+      }
+    },
+    {
+      "t_ms": 83329,
+      "stage": "judge",
+      "type": "start",
+      "data": {}
+    },
+    {
+      "t_ms": 90521,
+      "stage": "judge",
+      "type": "progress",
+      "data": {
+        "name": "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+        "kind": "intended",
+        "reason": "The PR announces COYOTE_FRAMES increasing from 4 to 6, so the expected airFrames becomes 7, matching HEAD."
+      }
+    },
+    {
+      "t_ms": 90521,
+      "stage": "judge",
+      "type": "progress",
+      "data": {
+        "name": "horizontal-movement-air-control-reduces-acceleration",
+        "kind": "silent",
+        "reason": "The refactor changed the friction function to apply RUN_FRICTION in air when input is held, a behavior change not announced and contradicted by 'No other behaviour changes.'"
+      }
+    },
+    {
+      "t_ms": 90521,
+      "stage": "judge",
+      "type": "progress",
+      "data": {
+        "name": "vertical-velocity-respects-terminal-speed",
+        "kind": "intended",
+        "reason": "The PR announces TERMINAL_SPEED increasing from 18 to 22, so the clamped velocity becomes -22, matching HEAD."
+      }
+    },
+    {
+      "t_ms": 90521,
+      "stage": "judge",
+      "type": "done",
+      "data": {
+        "silent": [
+          "horizontal-movement-air-control-reduces-acceleration"
+        ],
+        "intended": [
+          "grounded-jumps-set-airframes-to-coyote-frames-plus-one",
+          "vertical-velocity-respects-terminal-speed"
+        ]
+      }
+    },
+    {
+      "t_ms": 90521,
+      "stage": "seal",
+      "type": "start",
+      "data": {}
+    }
+  ],
+  "sha256": "72e3f2160e53c65228890dbc4cdf093565b000871648f1e45785913acd95faa6"
+}

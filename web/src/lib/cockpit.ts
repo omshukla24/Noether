@@ -228,7 +228,9 @@ export function describeError(code: string, message: string, retryAfter?: number
   let text = MESSAGES[code] ?? message;
   if (code === "rate_limited" || code === "busy") {
     const mins = retryAfter ? Math.max(1, Math.ceil(retryAfter / 60)) : null;
-    text = `${message}${mins ? ` Try again in about ${mins} min.` : ""}`;
+    // The server already ends some messages with its own "Try again ..."; keep one, the exact one.
+    const base = mins ? message.replace(/\s*Try again in [^.]*\.$/, "") : message;
+    text = `${base}${mins ? ` Try again in about ${mins} min.` : ""}`;
   }
   return { code, message: text, retryAfter };
 }
