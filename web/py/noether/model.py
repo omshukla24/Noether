@@ -168,6 +168,9 @@ class Runner(Protocol):
     def run_tests(self, snap: Snapshot, tests: list[Invariant]) -> list[TestResult]:
         """Write each invariant to `.noether/pinned/<name>.test.mjs` and run them."""
 
+    def run_module(self, snap: Snapshot, files: dict[str, str], entry: str) -> str:
+        """Write `files` to `.noether/pinned/` and run `entry` with node; the combined output."""
+
     def run_own_suite(self, snap: Snapshot) -> SuiteResult:
         """Run the repo's own `npm test` (or nothing if it has no test script)."""
 

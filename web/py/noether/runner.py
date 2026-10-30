@@ -123,6 +123,27 @@ class LocalRunner:
         results = parse_junit(report, names)
         return [results[n] for n in names]
 
+    def run_module(self, snap: Snapshot, files: dict[str, str], entry: str) -> str:
+        """Write `files` into .noether/pinned/ on a scratch copy and run `entry` with node; the combined output."""
+        scratch = self._clone(Path(snap.image))
+        try:
+            pinned_dir = scratch / ".noether" / "pinned"
+            pinned_dir.mkdir(parents=True)
+            for name, code in files.items():
+                (pinned_dir / name).write_text(code, encoding="utf-8")
+            cmd = [self.node, "--permission", f"--allow-fs-read={scratch}", f".noether/pinned/{entry}"]
+            started = time.monotonic()
+            try:
+                proc = subprocess.run(cmd, cwd=scratch, capture_output=True, text=True, encoding="utf-8",
+                                      errors="replace", timeout=self.timeout)
+            except subprocess.TimeoutExpired as exc:
+                raise RunnerError(f"node timed out after {self.timeout:.0f}s") from exc
+            finally:
+                self.seconds += time.monotonic() - started
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+        return proc.stdout + proc.stderr
+
     def run_own_suite(self, snap: Snapshot) -> SuiteResult:
         root = Path(snap.image)
         package = root / "package.json"
@@ -255,6 +276,13 @@ class ContreeRunner:
         names = [t.name for t in tests]
         results = parse_junit(_text(done.stdout), names)
         return [results[n] for n in names]
+
+    def run_module(self, snap: Snapshot, files: dict[str, str], entry: str) -> str:
+        """Write `files` into .noether/pinned/ and run `entry` with node (60 s cap); the combined output."""
+        uploads = {f"{snap.workdir}/.noether/pinned/{n}": code.encode("utf-8") for n, code in files.items()}
+        target = shlex.quote(".noether/pinned/" + entry)
+        script = f"cd {shlex.quote(snap.workdir)}\ntimeout 60 node {target} 2>&1 | head -c {MAX_SANDBOX_OUTPUT}\n"
+        return _text(self._exec(self._image(snap), script, files=uploads, disposable=True).stdout)
 
     def run_own_suite(self, snap: Snapshot) -> SuiteResult:
         has_script = (

@@ -191,6 +191,24 @@ def _add_missing_imports(code: str, change: Change, target: str) -> str:
     return code[:end] + line + code[end:]
 
 
+_IMPORT_SPEC = re.compile(r"""(\bfrom\s*|\bimport\s*)(['"])([^'"]+)\2""")
+
+
+def fix_import_paths(code: str, change: Change) -> str:
+    """A path written from the wrong folder ('./src/x.js', '../src/x.js') becomes the one the file needs
+    ('../../src/x.js') when it names a changed or related file."""
+    allowed = pinnable_paths(change)
+
+    def fix(m: re.Match) -> str:
+        spec = m.group(3)
+        repo = re.sub(r"^(?:\.{0,2}/)+", "", spec)
+        if posixpath.normpath(posixpath.join(PINNED_DIR, spec)) in allowed or repo not in allowed:
+            return m.group(0)
+        return f"{m.group(1)}{m.group(2)}../../{repo}{m.group(2)}"
+
+    return _IMPORT_SPEC.sub(fix, code)
+
+
 def _tidy(item: dict, change: Change | None = None) -> dict:
     """Undo the two slips models make most: a name that is not kebab-case, and a target_file written
     as the import path ('../../src/x.js') instead of the repo path ('src/x.js')."""
@@ -203,7 +221,8 @@ def _tidy(item: dict, change: Change | None = None) -> dict:
         if not resolved.startswith(".."):
             out["target_file"] = resolved
     if change is not None and isinstance(out.get("test_code"), str) and isinstance(out.get("target_file"), str):
-        out["test_code"] = _add_missing_imports(out["test_code"], change, _norm_path(out["target_file"]))
+        out["test_code"] = _add_missing_imports(fix_import_paths(out["test_code"], change), change,
+                                                _norm_path(out["target_file"]))
     return out
 
 
