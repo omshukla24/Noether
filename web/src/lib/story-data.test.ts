@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import hopper from "../../public/runs/hopper.json";
-import intended from "../../public/runs/20261027-025352-edb700.json";
+import intended from "../../public/runs/20261030-081836-42eca5.json";
 import type { Bundle } from "./bundle";
 import { darkroomPlates } from "./darkroom";
 import { judgeCase } from "./judge";
@@ -35,13 +35,13 @@ describe("darkroomPlates", () => {
 describe("judgeCase", () => {
   it("reads the silent ruling from the Hopper run and the intended one from the other", () => {
     const silent = judgeCase(run, "silent", "hopper.json")!;
-    const announced = judgeCase(other, "intended", "20261027-025352-edb700.json")!;
+    const announced = judgeCase(other, "intended", "20261030-081836-42eca5.json")!;
     expect(silent.truth).toBe("silent");
     expect(silent.failure).toContain("0.0985 !== 0.1");
     expect(announced.truth).toBe("intended");
-    expect(announced.failure).toContain("-22 !== -18");
+    expect(announced.failure).toBe("Expected values to be strictly equal: 7 !== 5");
     expect(announced.runId).not.toBe(silent.runId);
-    expect(announced.reason).toContain("TERMINAL_SPEED");
+    expect(announced.reason).toContain("COYOTE_FRAMES");
   });
 
   it("returns nothing when the run has no such ruling", () => {

@@ -85,6 +85,9 @@ export function sliceAround(source: string, line: number, radius: number): Sourc
 
 /** The assertion message of a failed pinned check, without the stack. */
 export function failureLine(output: string): string {
+  // A test file that died on its first assertion: node's own crash report, with the message after the last marker.
+  const crash = output.includes("node printed:") ? output.slice(output.lastIndexOf("AssertionError [ERR_ASSERTION]: ") + 32).split("\n    at ")[0] : null;
+  if (crash) return crash.replace(/\s+/g, " ").trim();
   const body = output.replace(/^\[Error \[[A-Z_]+\]: /, "").split("\n] {")[0];
   return body.replace(/\s+/g, " ").trim();
 }
