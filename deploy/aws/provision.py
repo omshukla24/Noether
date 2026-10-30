@@ -144,11 +144,13 @@ def ship(instance: str) -> None:
     params = as_file({"commands": ["bash /opt/noether/deploy/aws/bootstrap.sh"], "executionTimeout": ["1500"]})
     command = aws("ssm", "send-command", "--instance-ids", instance, "--document-name", "AWS-RunShellScript",
                   "--timeout-seconds", "600", "--parameters", params)["Command"]["CommandId"]
-    while True:
+    for _ in range(120):
         time.sleep(15)
         got = aws("ssm", "get-command-invocation", "--command-id", command, "--instance-id", instance, ok_fail=True)
         if got and got["Status"] not in ("Pending", "InProgress", "Delayed"):
             break
+    else:
+        sys.exit(f"no result for command {command} after 30 minutes")
     if got["Status"] != "Success":
         sys.exit(f"bootstrap ended {got['Status']}:\n{got['StandardErrorContent'][-1500:]}")
 
