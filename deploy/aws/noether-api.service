@@ -1,0 +1,18 @@
+[Unit]
+Description=Noether API (FastAPI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=noether
+WorkingDirectory=/opt/noether
+EnvironmentFile=/etc/noether.env
+# Uvicorn trusts the forwarded address from loopback only, which is Caddy, so rate limits see the real visitor.
+ExecStart=/opt/noether/.venv/bin/uvicorn noether.server:app --host 127.0.0.1 --port 3001 --workers 1
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
